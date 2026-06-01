@@ -1,0 +1,605 @@
+[
+  {
+    "id": "os/style/bg/1@799",
+    "section": "os",
+    "field": "style",
+    "role": "bg",
+    "key": "keyword",
+    "start": 799,
+    "end": 806
+  },
+  {
+    "id": "os/style/fg/2@810",
+    "section": "os",
+    "field": "style",
+    "role": "fg",
+    "key": "background",
+    "start": 810,
+    "end": 820
+  },
+  {
+    "id": "username/style_user/bg/1@1165",
+    "section": "username",
+    "field": "style_user",
+    "role": "bg",
+    "key": "keyword",
+    "start": 1165,
+    "end": 1172
+  },
+  {
+    "id": "username/style_user/fg/2@1176",
+    "section": "username",
+    "field": "style_user",
+    "role": "fg",
+    "key": "background",
+    "start": 1176,
+    "end": 1186
+  },
+  {
+    "id": "username/style_root/bg/1@1205",
+    "section": "username",
+    "field": "style_root",
+    "role": "bg",
+    "key": "keyword",
+    "start": 1205,
+    "end": 1212
+  },
+  {
+    "id": "username/style_root/fg/2@1216",
+    "section": "username",
+    "field": "style_root",
+    "role": "fg",
+    "key": "background",
+    "start": 1216,
+    "end": 1226
+  },
+  {
+    "id": "directory/style/fg/1@1282",
+    "section": "directory",
+    "field": "style",
+    "role": "fg",
+    "key": "background",
+    "start": 1282,
+    "end": 1292
+  },
+  {
+    "id": "directory/style/bg/2@1296",
+    "section": "directory",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 1296,
+    "end": 1304
+  },
+  {
+    "id": "git_branch/style/bg/1@1472",
+    "section": "git_branch",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 1472,
+    "end": 1480
+  },
+  {
+    "id": "git_status/style/bg/1@1574",
+    "section": "git_status",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 1574,
+    "end": 1582
+  },
+  {
+    "id": "nodejs/style/bg/1@1695",
+    "section": "nodejs",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 1695,
+    "end": 1703
+  },
+  {
+    "id": "c/style/bg/1@1807",
+    "section": "c",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 1807,
+    "end": 1815
+  },
+  {
+    "id": "rust/style/bg/1@1921",
+    "section": "rust",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 1921,
+    "end": 1929
+  },
+  {
+    "id": "golang/style/bg/1@2037",
+    "section": "golang",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 2037,
+    "end": 2045
+  },
+  {
+    "id": "php/style/bg/1@2150",
+    "section": "php",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 2150,
+    "end": 2158
+  },
+  {
+    "id": "java/style/bg/1@2265",
+    "section": "java",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 2265,
+    "end": 2273
+  },
+  {
+    "id": "kotlin/style/bg/1@2381",
+    "section": "kotlin",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 2381,
+    "end": 2389
+  },
+  {
+    "id": "haskell/style/bg/1@2498",
+    "section": "haskell",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 2498,
+    "end": 2506
+  },
+  {
+    "id": "python/style/bg/1@2614",
+    "section": "python",
+    "field": "style",
+    "role": "bg",
+    "key": "property",
+    "start": 2614,
+    "end": 2622
+  },
+  {
+    "id": "docker_context/style/bg/1@2738",
+    "section": "docker_context",
+    "field": "style",
+    "role": "bg",
+    "key": "background",
+    "start": 2738,
+    "end": 2748
+  },
+  {
+    "id": "time/style/bg/1@2873",
+    "section": "time",
+    "field": "style",
+    "role": "bg",
+    "key": "keyword",
+    "start": 2873,
+    "end": 2880
+  },
+  {
+    "id": "format/format (#1)/fg/1@162",
+    "section": "format",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "keyword",
+    "start": 162,
+    "end": 169
+  },
+  {
+    "id": "format/format (#2)/bg/1@195",
+    "section": "format",
+    "field": "format (#2)",
+    "role": "bg",
+    "key": "function",
+    "start": 195,
+    "end": 203
+  },
+  {
+    "id": "format/format (#2)/fg/2@207",
+    "section": "format",
+    "field": "format (#2)",
+    "role": "fg",
+    "key": "keyword",
+    "start": 207,
+    "end": 214
+  },
+  {
+    "id": "format/format (#3)/fg/1@225",
+    "section": "format",
+    "field": "format (#3)",
+    "role": "fg",
+    "key": "function",
+    "start": 225,
+    "end": 233
+  },
+  {
+    "id": "format/format (#3)/bg/2@237",
+    "section": "format",
+    "field": "format (#3)",
+    "role": "bg",
+    "key": "property",
+    "start": 237,
+    "end": 245
+  },
+  {
+    "id": "format/format (#4)/fg/1@267",
+    "section": "format",
+    "field": "format (#4)",
+    "role": "fg",
+    "key": "property",
+    "start": 267,
+    "end": 275
+  },
+  {
+    "id": "format/format (#4)/bg/2@279",
+    "section": "format",
+    "field": "format (#4)",
+    "role": "bg",
+    "key": "type",
+    "start": 279,
+    "end": 283
+  },
+  {
+    "id": "format/format (#5)/fg/1@293",
+    "section": "format",
+    "field": "format (#5)",
+    "role": "fg",
+    "key": "type",
+    "start": 293,
+    "end": 297
+  },
+  {
+    "id": "format/format (#5)/bg/2@301",
+    "section": "format",
+    "field": "format (#5)",
+    "role": "bg",
+    "key": "number",
+    "start": 301,
+    "end": 307
+  },
+  {
+    "id": "format/format (#6)/fg/1@343",
+    "section": "format",
+    "field": "format (#6)",
+    "role": "fg",
+    "key": "number",
+    "start": 343,
+    "end": 349
+  },
+  {
+    "id": "format/format (#6)/bg/2@353",
+    "section": "format",
+    "field": "format (#6)",
+    "role": "bg",
+    "key": "string",
+    "start": 353,
+    "end": 359
+  },
+  {
+    "id": "format/format (#7)/fg/1@369",
+    "section": "format",
+    "field": "format (#7)",
+    "role": "fg",
+    "key": "string",
+    "start": 369,
+    "end": 375
+  },
+  {
+    "id": "format/format (#7)/bg/2@379",
+    "section": "format",
+    "field": "format (#7)",
+    "role": "bg",
+    "key": "function",
+    "start": 379,
+    "end": 387
+  },
+  {
+    "id": "format/format (#8)/fg/1@415",
+    "section": "format",
+    "field": "format (#8)",
+    "role": "fg",
+    "key": "function",
+    "start": 415,
+    "end": 423
+  },
+  {
+    "id": "git_branch/format (#1)/fg/1@1516",
+    "section": "git_branch",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "background",
+    "start": 1516,
+    "end": 1526
+  },
+  {
+    "id": "git_branch/format (#1)/bg/2@1530",
+    "section": "git_branch",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "number",
+    "start": 1530,
+    "end": 1536
+  },
+  {
+    "id": "git_status/format (#1)/fg/1@1628",
+    "section": "git_status",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "background",
+    "start": 1628,
+    "end": 1638
+  },
+  {
+    "id": "git_status/format (#1)/bg/2@1642",
+    "section": "git_status",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "number",
+    "start": 1642,
+    "end": 1648
+  },
+  {
+    "id": "nodejs/format (#1)/fg/1@1742",
+    "section": "nodejs",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "background",
+    "start": 1742,
+    "end": 1752
+  },
+  {
+    "id": "nodejs/format (#1)/bg/2@1756",
+    "section": "nodejs",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 1756,
+    "end": 1764
+  },
+  {
+    "id": "c/format (#1)/fg/1@1854",
+    "section": "c",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "background",
+    "start": 1854,
+    "end": 1864
+  },
+  {
+    "id": "c/format (#1)/bg/2@1868",
+    "section": "c",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 1868,
+    "end": 1876
+  },
+  {
+    "id": "rust/format (#1)/fg/1@1968",
+    "section": "rust",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "background",
+    "start": 1968,
+    "end": 1978
+  },
+  {
+    "id": "rust/format (#1)/bg/2@1982",
+    "section": "rust",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 1982,
+    "end": 1990
+  },
+  {
+    "id": "golang/format (#1)/fg/1@2084",
+    "section": "golang",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "background",
+    "start": 2084,
+    "end": 2094
+  },
+  {
+    "id": "golang/format (#1)/bg/2@2098",
+    "section": "golang",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 2098,
+    "end": 2106
+  },
+  {
+    "id": "php/format (#1)/fg/1@2197",
+    "section": "php",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "foreground",
+    "start": 2197,
+    "end": 2207
+  },
+  {
+    "id": "php/format (#1)/bg/2@2211",
+    "section": "php",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 2211,
+    "end": 2219
+  },
+  {
+    "id": "java/format (#1)/fg/1@2312",
+    "section": "java",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "foreground",
+    "start": 2312,
+    "end": 2322
+  },
+  {
+    "id": "java/format (#1)/bg/2@2326",
+    "section": "java",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 2326,
+    "end": 2334
+  },
+  {
+    "id": "kotlin/format (#1)/fg/1@2428",
+    "section": "kotlin",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "foreground",
+    "start": 2428,
+    "end": 2438
+  },
+  {
+    "id": "kotlin/format (#1)/bg/2@2442",
+    "section": "kotlin",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 2442,
+    "end": 2450
+  },
+  {
+    "id": "haskell/format (#1)/fg/1@2545",
+    "section": "haskell",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "foreground",
+    "start": 2545,
+    "end": 2555
+  },
+  {
+    "id": "haskell/format (#1)/bg/2@2559",
+    "section": "haskell",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 2559,
+    "end": 2567
+  },
+  {
+    "id": "python/format (#1)/fg/1@2661",
+    "section": "python",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "foreground",
+    "start": 2661,
+    "end": 2671
+  },
+  {
+    "id": "python/format (#1)/bg/2@2675",
+    "section": "python",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "property",
+    "start": 2675,
+    "end": 2683
+  },
+  {
+    "id": "docker_context/format (#1)/fg/1@2787",
+    "section": "docker_context",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "info",
+    "start": 2787,
+    "end": 2791
+  },
+  {
+    "id": "docker_context/format (#1)/bg/2@2795",
+    "section": "docker_context",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "background",
+    "start": 2795,
+    "end": 2805
+  },
+  {
+    "id": "time/format (#1)/fg/1@2908",
+    "section": "time",
+    "field": "format (#1)",
+    "role": "fg",
+    "key": "background",
+    "start": 2908,
+    "end": 2918
+  },
+  {
+    "id": "time/format (#1)/bg/2@2922",
+    "section": "time",
+    "field": "format (#1)",
+    "role": "bg",
+    "key": "keyword",
+    "start": 2922,
+    "end": 2929
+  },
+  {
+    "id": "character/success_symbol (#1)/fg/1@3032",
+    "section": "character",
+    "field": "success_symbol (#1)",
+    "role": "fg",
+    "key": "string",
+    "start": 3032,
+    "end": 3038
+  },
+  {
+    "id": "character/error_symbol (#1)/fg/1@3069",
+    "section": "character",
+    "field": "error_symbol (#1)",
+    "role": "fg",
+    "key": "error",
+    "start": 3069,
+    "end": 3074
+  },
+  {
+    "id": "character/vimcmd_symbol (#1)/fg/1@3106",
+    "section": "character",
+    "field": "vimcmd_symbol (#1)",
+    "role": "fg",
+    "key": "string",
+    "start": 3106,
+    "end": 3112
+  },
+  {
+    "id": "character/vimcmd_replace_one_symbol (#1)/fg/1@3156",
+    "section": "character",
+    "field": "vimcmd_replace_one_symbol (#1)",
+    "role": "fg",
+    "key": "keyword",
+    "start": 3156,
+    "end": 3163
+  },
+  {
+    "id": "character/vimcmd_replace_symbol (#1)/fg/1@3203",
+    "section": "character",
+    "field": "vimcmd_replace_symbol (#1)",
+    "role": "fg",
+    "key": "keyword",
+    "start": 3203,
+    "end": 3210
+  },
+  {
+    "id": "character/vimcmd_visual_symbol (#1)/fg/1@3249",
+    "section": "character",
+    "field": "vimcmd_visual_symbol (#1)",
+    "role": "fg",
+    "key": "keyword",
+    "start": 3249,
+    "end": 3256
+  }
+]
