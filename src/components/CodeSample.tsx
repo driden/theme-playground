@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo, type ReactNode } from "react";
 
 type Props = { palette: Record<string, string> };
 
@@ -11,34 +11,33 @@ const REQUIRED = [
   "error", "warning", "info", "hint",
 ];
 
-function buildHtml(p: Record<string, string>): string {
-  const span = (role: string, text: string) =>
-    `<span style="color:${p[role]}">${escape(text)}</span>`;
+type Line = ReactNode[] | ReactNode;
+
+function buildLines(p: Record<string, string>): Line[] {
+  const s = (role: string, text: string): ReactNode => (
+    <span style={{ color: p[role] }}>{text}</span>
+  );
 
   return [
-    span("comment", "-- factorial of n; tail-recursive via accumulator"),
-    `${span("keyword","local")} ${span("function","factorial")} ${span("operator","=")} ${span("keyword","function")}(${span("parameter","n")}, ${span("parameter","acc")})`,
-    `  ${span("keyword","if")} ${span("parameter","n")} ${span("operator","<=")} ${span("number","1")} ${span("keyword","then")} ${span("keyword","return")} ${span("parameter","acc")} ${span("operator","or")} ${span("number","1")} ${span("keyword","end")}`,
-    `  ${span("keyword","return")} ${span("function","factorial")}(${span("parameter","n")} ${span("operator","-")} ${span("number","1")}, (${span("parameter","acc")} ${span("operator","or")} ${span("number","1")}) ${span("operator","*")} ${span("parameter","n")})`,
-    `${span("keyword","end")}`,
+    s("comment", "-- factorial of n; tail-recursive via accumulator"),
+    [s("keyword","local"), " ", s("function","factorial"), " ", s("operator","="), " ", s("keyword","function"), "(", s("parameter","n"), ", ", s("parameter","acc"), ")"],
+    ["  ", s("keyword","if"), " ", s("parameter","n"), " ", s("operator","<="), " ", s("number","1"), " ", s("keyword","then"), " ", s("keyword","return"), " ", s("parameter","acc"), " ", s("operator","or"), " ", s("number","1"), " ", s("keyword","end")],
+    ["  ", s("keyword","return"), " ", s("function","factorial"), "(", s("parameter","n"), " ", s("operator","-"), " ", s("number","1"), ", (", s("parameter","acc"), " ", s("operator","or"), " ", s("number","1"), ") ", s("operator","*"), " ", s("parameter","n"), ")"],
+    s("keyword","end"),
     "",
-    span("comment", "-- usage"),
-    `${span("keyword","local")} ${span("variable","msg")} ${span("operator","=")} ${span("string",'"6! = "')} ${span("operator","..")} ${span("function","tostring")}(${span("function","factorial")}(${span("number","6")}))`,
-    `${span("variable","vim")}.${span("property","notify")}(${span("variable","msg")}, ${span("variable","vim")}.${span("property","log")}.${span("property","levels")}.${span("constant","INFO")})`,
+    s("comment", "-- usage"),
+    [s("keyword","local"), " ", s("variable","msg"), " ", s("operator","="), " ", s("string",'"6! = "'), " ", s("operator",".."), " ", s("function","tostring"), "(", s("function","factorial"), "(", s("number","6"), "))"],
+    [s("variable","vim"), ".", s("property","notify"), "(", s("variable","msg"), ", ", s("variable","vim"), ".", s("property","log"), ".", s("property","levels"), ".", s("constant","INFO"), ")"],
     "",
-    `${span("error","DiagnosticError")}  ${span("warning","DiagnosticWarn")}  ${span("info","DiagnosticInfo")}  ${span("hint","DiagnosticHint")}`,
-  ].join("\n");
-}
-
-function escape(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    [s("error","DiagnosticError"), "  ", s("warning","DiagnosticWarn"), "  ", s("info","DiagnosticInfo"), "  ", s("hint","DiagnosticHint")],
+  ];
 }
 
 export function CodeSample({ palette }: Props) {
   const missing = REQUIRED.filter(r => !palette[r]);
-  const html = useMemo(() => missing.length ? null : buildHtml(palette), [palette, missing.length]);
+  const lines = useMemo(() => missing.length ? null : buildLines(palette), [palette, missing.length]);
 
-  if (html === null) {
+  if (lines === null) {
     return (
       <div className="code-sample-missing">
         Code sample needs semantic roles in <code>colors.toml</code> (<code>{missing.slice(0, 3).join(", ")}{missing.length > 3 ? ", …" : ""}</code>).
@@ -50,7 +49,13 @@ export function CodeSample({ palette }: Props) {
     <pre
       className="code-sample"
       style={{ background: palette.background, color: palette.foreground }}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    >
+      {lines.map((line, i) => (
+        <Fragment key={i}>
+          {line}
+          {i < lines.length - 1 ? "\n" : null}
+        </Fragment>
+      ))}
+    </pre>
   );
 }

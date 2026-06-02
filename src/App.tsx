@@ -1,55 +1,60 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { listThemes, getTheme, editSlot, undoEdit, saveDraft, discardDraft, type ThemeListing, type ThemeState, type AppState } from "./api";
+import type { SlotRole } from "./lib/slot-discovery";
+import { parseFormatTokens } from "./lib/format-tokens";
+import { errMessage } from "./lib/err";
 import { PromptPreview } from "./components/PromptPreview";
 import { ColorSlotTable } from "./components/ColorSlotTable";
 import { ThemeSelector } from "./components/ThemeSelector";
 import { CodeSample } from "./components/CodeSample";
 import { PaletteLegend } from "./components/PaletteLegend";
 
-// Walks the top-level `format` string and returns an ordered list of its
-// components: each `[](...)` transition and each `$module` reference, in
-// the order they render in the prompt. Lets the slot table show modules
-// interleaved with transitions instead of two opaque blocks.
-export type FormatToken = { type: "transition" } | { type: "module"; name: string };
+type HoverSlot = { hex: string; role: SlotRole } | null;
 
-export function parseFormatTokens(fileRaw: string): FormatToken[] {
-  const m = fileRaw.match(/^format\s*=\s*(?:"""([\s\S]*?)"""|"([^"]*)"|'([^']*)')/m);
-  let content = m ? (m[1] ?? m[2] ?? m[3] ?? "") : "";
-  // Strip commented-out lines (e.g. `#$c\` left in templates) so they don't
-  // get counted as live module references.
-  content = content.replace(/^[ \t]*#[^\n]*/gm, "");
-  const tokens: FormatToken[] = [];
-  const re = /\]\([^)]*\)|\$\{?([A-Za-z_]\w*)/g;
-  let t: RegExpExecArray | null;
-  while ((t = re.exec(content)) !== null) {
-    if (t[0].startsWith("](")) tokens.push({ type: "transition" });
-    else tokens.push({ type: "module", name: t[1] });
-  }
-  return tokens;
+function useToast(): { toast: string | null; showToast: (msg: string, ms?: number) => void } {
+  const [toast, setToast] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((msg: string, ms = 1500) => {
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
+    setToast(msg);
+    timerRef.current = setTimeout(() => {
+      setToast(null);
+      timerRef.current = null;
+    }, ms);
+  }, []);
+
+  useEffect(() => () => {
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
+  }, []);
+
+  return { toast, showToast };
 }
-
-type HoverSlot = { hex: string; role: "fg" | "bg" } | null;
 
 export default function App() {
   const [themes, setThemes] = useState<ThemeListing[]>([]);
   const [activeName, setActiveName] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeState | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [hover, setHover] = useState<HoverSlot>(null);
+  const { toast, showToast } = useToast();
 
   useEffect(() => {
     listThemes().then(list => {
       setThemes(list);
       const initial = list.find(t => t.current) ?? list[0];
       if (initial) setActiveName(initial.name);
-    }).catch(e => setError(e.message));
+    }).catch((e: unknown) => setError(errMessage(e)));
   }, []);
 
   useEffect(() => {
     if (!activeName) return;
     setError(null);
-    getTheme(activeName).then(setTheme).catch(e => setError(e.message));
+    let cancelled = false;
+    getTheme(activeName)
+      .then(t => { if (!cancelled) setTheme(t); })
+      .catch((e: unknown) => { if (!cancelled) setError(errMessage(e)); });
+    return () => { cancelled = true; };
   }, [activeName]);
 
   async function handleEdit(slotId: string, newKey: string) {
@@ -57,8 +62,8 @@ export default function App() {
     try {
       const updated = await editSlot(theme.name, slotId, newKey);
       setTheme(prev => prev ? { ...prev, apps: [updated] } : prev);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(errMessage(e));
     }
   }
 
@@ -69,10 +74,9 @@ export default function App() {
       const [list, t] = await Promise.all([listThemes(), getTheme(activeName)]);
       setThemes(list);
       setTheme(t);
-      setToast("reloaded");
-      setTimeout(() => setToast(null), 1500);
-    } catch (e: any) {
-      setError(e.message);
+      showToast("reloaded");
+    } catch (e: unknown) {
+      setError(errMessage(e));
     }
   }
 
@@ -81,15 +85,18 @@ export default function App() {
     try {
       const updated = await fn(theme.name);
       setTheme(prev => prev ? { ...prev, apps: [updated] } : prev);
-      setToast(successMsg);
-      setTimeout(() => setToast(null), 1500);
-    } catch (e: any) {
-      setError(e.message);
+      showToast(successMsg);
+    } catch (e: unknown) {
+      setError(errMessage(e));
     }
   }
   const handleUndo = () => applyAppAction(undoEdit, "undone");
   const handleSave = () => applyAppAction(saveDraft, "saved");
   const handleDiscard = () => applyAppAction(discardDraft, "discarded");
+
+  const handleSlotDisappeared = useCallback(() => {
+    showToast("slot moved — pick again", 1800);
+  }, [showToast]);
 
   const currentApp = theme?.apps[0];
 
@@ -123,10 +130,7 @@ export default function App() {
           hover={hover}
           onEdit={handleEdit}
           onHoverSlot={setHover}
-          onSlotDisappeared={() => {
-            setToast("slot moved — pick again");
-            setTimeout(() => setToast(null), 1800);
-          }}
+          onSlotDisappeared={handleSlotDisappeared}
         />
       ))}
       {toast && <div className="toast">{toast}</div>}
