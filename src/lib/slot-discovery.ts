@@ -72,7 +72,7 @@ function tokenizeSlice(
   let occ = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    const prefix = m[1]; const name = m[2]; const lower = name.toLowerCase();
+    const prefix = m[1]; const name = m[2]!; const lower = name.toLowerCase();
     if (MODIFIERS.has(lower) || !palette.has(lower)) continue;
     const role: SlotRole = prefix === "bg:" ? "bg" : "fg";
     const start = sliceStart + m.index + (prefix ? prefix.length : 0);
@@ -100,7 +100,7 @@ function bracketSlots(
   while ((m = re.exec(text)) !== null) {
     occ += 1;
     const innerStart = sliceStart + m.index + 2; // skip `](`
-    out.push(...tokenizeSlice(source, innerStart, innerStart + m[1].length, section, `${field} (#${occ})`, palette));
+    out.push(...tokenizeSlice(source, innerStart, innerStart + m[1]!.length, section, `${field} (#${occ})`, palette));
   }
   return out;
 }

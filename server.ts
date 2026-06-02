@@ -195,7 +195,7 @@ const server = Bun.serve({
       }
       const themeMatch = p.match(/^\/api\/themes\/([\w-]+)$/);
       if (req.method === "GET" && themeMatch) {
-        const themeName = themeMatch[1];
+        const themeName = themeMatch[1]!;
         await assertThemeExists(themeName);
         return json(await buildThemeState(themeName));
       }
@@ -203,7 +203,9 @@ const server = Bun.serve({
       // POST /api/themes/:name/:app/(undo|save|discard) — draft actions
       const actionMatch = p.match(/^\/api\/themes\/([\w-]+)\/([\w-]+)\/(undo|save|discard)$/);
       if (req.method === "POST" && actionMatch) {
-        const [, themeName, app, action] = actionMatch;
+        const themeName = actionMatch[1]!;
+        const app = actionMatch[2]!;
+        const action = actionMatch[3]!;
         await assertThemeExists(themeName);
         if (app !== "starship") throw new HttpError(404, `app '${app}' not supported in v1`);
         const draft = draftPath(themeName, app);
@@ -228,7 +230,8 @@ const server = Bun.serve({
       // POST /api/themes/:name/:app — slot edit (writes to draft)
       const editMatch = p.match(/^\/api\/themes\/([\w-]+)\/([\w-]+)$/);
       if (req.method === "POST" && editMatch) {
-        const [, themeName, app] = editMatch;
+        const themeName = editMatch[1]!;
+        const app = editMatch[2]!;
         await assertThemeExists(themeName);
         if (app !== "starship") throw new HttpError(404, `app '${app}' not supported in v1`);
         const body = parseSlotEditBody(await req.json());

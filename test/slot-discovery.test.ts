@@ -131,9 +131,9 @@ describe("discoverSlots (name-token mode)", () => {
     expect(slots[0]).toMatchObject({ key: "color12" });
   });
 
-  test("hex-literal mode throws TODO(v2) (forward-compat stub)", () => {
+  test("hex-literal mode throws (forward-compat stub)", () => {
     expect(() => discoverSlots("anything", PALETTE, "hex-literal"))
-      .toThrow(/TODO\(v2\)/);
+      .toThrow(/hex-literal/);
   });
 
   test("tracks section context for [[array-of-tables]] headers", () => {
