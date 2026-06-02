@@ -2,7 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import TOML from "@iarna/toml";
-import { discoverSlots, paletteKeysFromStarshipToml, type ColorSlot } from "./src/lib/slot-discovery";
+import { discoverSlots, paletteKeysFromStarshipToml } from "./src/lib/slot-discovery";
+import type { AppState, ThemeState, ColorSlot } from "./src/lib/types";
+import { errMessage } from "./src/lib/types";
 
 // THEMES_DIR can be pointed at any directory containing per-theme subdirs
 // (each with colors.toml + starship.toml). Defaults to ../themes for a
@@ -13,21 +15,16 @@ const THEMES_DIR = process.env.THEMES_DIR
 const REPO_ROOT = path.resolve(THEMES_DIR, "..");
 const DRAFTS_DIR = path.join(import.meta.dir, ".drafts");
 
-type AppState = {
-  app: "starship";
-  fileRaw: string;
-  colorSlots: ColorSlot[];
-  preview: { kind: "ansi"; data: string } | null;
-  error: string | null;
-  dirty: boolean;
-  canUndo: boolean;
-};
+class HttpError extends Error {
+  constructor(public status: number, msg: string) { super(msg); }
+}
 
-type ThemeState = {
-  name: string;
-  palette: Record<string, string>;
-  apps: AppState[];
-};
+function parseSlotEditBody(x: unknown): { slotId: string; newPaletteKey: string } | null {
+  if (typeof x !== "object" || x === null) return null;
+  const obj = x as Record<string, unknown>;
+  if (typeof obj.slotId !== "string" || typeof obj.newPaletteKey !== "string") return null;
+  return { slotId: obj.slotId, newPaletteKey: obj.newPaletteKey };
+}
 
 // ── path / draft helpers ─────────────────────────────────────────────────────
 
@@ -95,6 +92,13 @@ async function listThemes(): Promise<{ name: string; current: boolean }[]> {
   return names.map(name => ({ name, current: name === current }));
 }
 
+async function assertThemeExists(themeName: string): Promise<void> {
+  const themes = await listThemes();
+  if (!themes.some(t => t.name === themeName)) {
+    throw new HttpError(404, "unknown theme");
+  }
+}
+
 async function readPalette(themeName: string): Promise<Record<string, string>> {
   const text = await fs.readFile(path.join(THEMES_DIR, themeName, "colors.toml"), "utf8");
   const parsed = TOML.parse(text) as { palette?: Record<string, string> };
@@ -114,21 +118,26 @@ async function renderStarship(configPath: string): Promise<{ ansi: string | null
     // wrap ANSI escapes in `%{...%}` markers for zsh's prompt-length counter,
     // which real zsh strips but our HTML preview shows literally.
   };
-  const proc = Bun.spawn(
-    ["starship", "prompt",
-     "--terminal-width=120",
-     "--status=0",
-     "--cmd-duration=1234",
-     "--jobs=0"],
-    { cwd: REPO_ROOT, env, stdout: "pipe", stderr: "pipe" },
-  );
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-  ]);
-  const exit = await proc.exited;
-  if (exit !== 0) return { ansi: null, error: stderr.trim() || `starship exited ${exit}` };
-  return { ansi: stdout, error: null };
+  try {
+    const proc = Bun.spawn(
+      ["starship", "prompt",
+       "--terminal-width=120",
+       "--status=0",
+       "--cmd-duration=1234",
+       "--jobs=0"],
+      { cwd: REPO_ROOT, env, stdout: "pipe", stderr: "pipe" },
+    );
+    const [stdout, stderr] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+    ]);
+    const exit = await proc.exited;
+    if (exit !== 0) return { ansi: null, error: stderr.trim() || `starship exited ${exit}` };
+    return { ansi: stdout, error: null };
+  } catch (e: unknown) {
+    console.error(e);
+    return { ansi: null, error: "starship binary not found in PATH" };
+  }
 }
 
 // ── theme state ──────────────────────────────────────────────────────────────
@@ -138,19 +147,21 @@ async function buildAppState(themeName: string): Promise<AppState> {
   const fileRaw = await fs.readFile(draft, "utf8");
   const palette = paletteKeysFromStarshipToml(fileRaw);
   let colorSlots: ColorSlot[] = [];
-  let stripError: string | null = null;
+  let slotError: string | null = null;
   try {
     colorSlots = discoverSlots(fileRaw, palette, "name-token");
-  } catch (e: any) {
-    stripError = e.message;
+  } catch (e: unknown) {
+    console.error(e);
+    slotError = errMessage(e);
   }
-  const { ansi, error } = await renderStarship(draft);
+  const { ansi, error: previewError } = await renderStarship(draft);
   return {
     app: "starship",
     fileRaw,
     colorSlots,
     preview: ansi !== null ? { kind: "ansi", data: ansi } : null,
-    error: error ?? stripError,
+    previewError,
+    slotError,
     dirty: await isDirty(themeName, "starship"),
     canUndo: canUndo(themeName, "starship"),
   };
@@ -184,20 +195,23 @@ const server = Bun.serve({
       }
       const themeMatch = p.match(/^\/api\/themes\/([\w-]+)$/);
       if (req.method === "GET" && themeMatch) {
-        return json(await buildThemeState(themeMatch[1]));
+        const themeName = themeMatch[1];
+        await assertThemeExists(themeName);
+        return json(await buildThemeState(themeName));
       }
 
       // POST /api/themes/:name/:app/(undo|save|discard) — draft actions
       const actionMatch = p.match(/^\/api\/themes\/([\w-]+)\/([\w-]+)\/(undo|save|discard)$/);
       if (req.method === "POST" && actionMatch) {
         const [, themeName, app, action] = actionMatch;
-        if (app !== "starship") return json({ error: `app '${app}' not supported in v1` }, 404);
+        await assertThemeExists(themeName);
+        if (app !== "starship") throw new HttpError(404, `app '${app}' not supported in v1`);
         const draft = draftPath(themeName, app);
         const original = originalPath(themeName, app);
 
         if (action === "undo") {
           const prev = popHistory(themeName, app);
-          if (prev === null) return json({ error: "nothing to undo" }, 400);
+          if (prev === null) throw new HttpError(400, "nothing to undo");
           await fs.writeFile(draft, prev, "utf8");
         } else if (action === "save") {
           await ensureDraft(themeName, app);
@@ -215,17 +229,21 @@ const server = Bun.serve({
       const editMatch = p.match(/^\/api\/themes\/([\w-]+)\/([\w-]+)$/);
       if (req.method === "POST" && editMatch) {
         const [, themeName, app] = editMatch;
-        if (app !== "starship") return json({ error: `app '${app}' not supported in v1` }, 404);
-        const body = await req.json() as { slotId: string; newPaletteKey: string };
+        await assertThemeExists(themeName);
+        if (app !== "starship") throw new HttpError(404, `app '${app}' not supported in v1`);
+        const body = parseSlotEditBody(await req.json());
+        if (body === null) {
+          throw new HttpError(400, "invalid body: expected { slotId: string, newPaletteKey: string }");
+        }
         const draft = await ensureDraft(themeName, app);
         const current = await fs.readFile(draft, "utf8");
         const palette = paletteKeysFromStarshipToml(current);
         if (!palette.has(body.newPaletteKey.toLowerCase())) {
-          return json({ error: `key '${body.newPaletteKey}' not in [palettes.theme] — run \`theme build\`?` }, 400);
+          throw new HttpError(400, `key '${body.newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`);
         }
         const slots = discoverSlots(current, palette, "name-token");
         const slot = slots.find(s => s.id === body.slotId);
-        if (!slot) return json({ error: `slot '${body.slotId}' not found in current file (file may have changed)` }, 409);
+        if (!slot) throw new HttpError(409, `slot '${body.slotId}' not found in current file (file may have changed)`);
 
         pushHistory(themeName, app, current);
         const next = current.slice(0, slot.start) + body.newPaletteKey + current.slice(slot.end);
@@ -233,10 +251,11 @@ const server = Bun.serve({
         return json(await buildAppState(themeName));
       }
 
-      return new Response("not found", { status: 404 });
-    } catch (e: any) {
+      return json({ error: "not found" }, 404);
+    } catch (e: unknown) {
+      if (e instanceof HttpError) return json({ error: e.message }, e.status);
       console.error(e);
-      return json({ error: e.message ?? String(e) }, 500);
+      return json({ error: "internal server error" }, 500);
     }
   },
 });
