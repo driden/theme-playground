@@ -1,26 +1,44 @@
 import { useMemo } from "react";
 import { AnsiUp } from "ansi_up";
+import type { SlotRole } from "../lib/slot-discovery";
 
 type Props = {
   ansi: string | null;
-  highlight: { hex: string; role: "fg" | "bg" } | null;
+  highlight: { hex: string; role: SlotRole } | null;
 };
 
+// These regexes are coupled to ansi_up's output shape: it emits spans like
+// `<span style="color:rgb(R, G, B);background-color:rgb(R, G, B)">…</span>`.
+// If ansi_up's emitted markup changes, both the regex and annotateSpans need
+// updating.
 const RGB_FG_RE = /(?:^|;)\s*color\s*:\s*rgb\(([^)]+)\)/;
 const RGB_BG_RE = /(?:^|;)\s*background-color\s*:\s*rgb\(([^)]+)\)/;
 
-function rgbToHex(triple: string): string {
-  const [r, g, b] = triple.split(",").map(s => parseInt(s.trim(), 10));
-  return "#" + [r, g, b].map(n => n.toString(16).padStart(2, "0")).join("").toUpperCase();
+function rgbToHex(triple: string): string | null {
+  const parts = triple.split(",");
+  if (parts.length !== 3) return null;
+  const nums: number[] = [];
+  for (const part of parts) {
+    const n = parseInt(part.trim(), 10);
+    if (!Number.isFinite(n) || n < 0 || n > 255) return null;
+    nums.push(n);
+  }
+  return "#" + nums.map(n => n.toString(16).padStart(2, "0")).join("").toUpperCase();
 }
 
 function annotateSpans(html: string): string {
-  return html.replace(/<span style="([^"]*)">/g, (_match, style) => {
+  return html.replace(/<span style="([^"]*)">/g, (_match, style: string) => {
     const fg = RGB_FG_RE.exec(style);
     const bg = RGB_BG_RE.exec(style);
     const attrs: string[] = [];
-    if (fg) attrs.push(`data-fg="${rgbToHex(fg[1])}"`);
-    if (bg) attrs.push(`data-bg="${rgbToHex(bg[1])}"`);
+    if (fg && fg[1]) {
+      const hex = rgbToHex(fg[1]);
+      if (hex) attrs.push(`data-fg="${hex}"`);
+    }
+    if (bg && bg[1]) {
+      const hex = rgbToHex(bg[1]);
+      if (hex) attrs.push(`data-bg="${hex}"`);
+    }
     return `<span style="${style}" ${attrs.join(" ")}>`;
   });
 }

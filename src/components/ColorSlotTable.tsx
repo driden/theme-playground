@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { ColorSlot } from "../lib/slot-discovery";
-import type { FormatToken } from "../App";
+import type { ColorSlot, SlotRole } from "../lib/slot-discovery";
+import type { FormatToken } from "../lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
 
 type Props = {
@@ -9,10 +9,10 @@ type Props = {
   formatTokens: FormatToken[];
   onEdit: (slotId: string, newKey: string) => void;
   onSlotDisappeared: () => void;
-  onHoverSlot: (h: { hex: string; role: "fg" | "bg" } | null) => void;
+  onHoverSlot: (h: { hex: string; role: SlotRole } | null) => void;
 };
 
-type Group = {
+export type Group = {
   section: string;
   field: string;
   fg?: ColorSlot;
@@ -21,31 +21,39 @@ type Group = {
 
 // One Group per (section, field). Slots arrive interleaved by role; collapse
 // them so we render one row per pair.
-function groupSlots(slots: ColorSlot[]): Group[] {
+export function groupSlots(slots: ColorSlot[]): Group[] {
   const map = new Map<string, Group>();
   const order: string[] = [];
   for (const s of slots) {
     const k = `${s.section}/${s.field}`;
-    if (!map.has(k)) {
-      map.set(k, { section: s.section, field: s.field });
+    let g = map.get(k);
+    if (!g) {
+      g = { section: s.section, field: s.field };
+      map.set(k, g);
       order.push(k);
     }
-    const g = map.get(k)!;
     if (s.role === "fg") g.fg = s;
     else g.bg = s;
   }
-  return order.map(k => map.get(k)!);
+  return order.flatMap(k => {
+    const g = map.get(k);
+    return g ? [g] : [];
+  });
 }
 
 // Order `groups` to match the visual order of the rendered prompt by walking
 // `formatTokens`: each transition pulls the next format-section group; each
 // module reference pulls all that section's groups. Anything left over is
 // "defined but unused".
-function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { active: Group[]; inactive: Group[] } {
+export function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { active: Group[]; inactive: Group[] } {
   const bySection = new Map<string, Group[]>();
   for (const g of groups) {
-    if (!bySection.has(g.section)) bySection.set(g.section, []);
-    bySection.get(g.section)!.push(g);
+    let arr = bySection.get(g.section);
+    if (!arr) {
+      arr = [];
+      bySection.set(g.section, arr);
+    }
+    arr.push(g);
   }
   const formatGroups = bySection.get("format") ?? [];
   const active: Group[] = [];
@@ -55,8 +63,8 @@ function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { active: 
 
   for (const tok of formatTokens) {
     if (tok.type === "transition") {
-      if (formatIdx < formatGroups.length) {
-        const g = formatGroups[formatIdx++];
+      const g = formatGroups[formatIdx++];
+      if (g) {
         active.push(g);
         seen.add(keyOf(g));
       }
@@ -71,6 +79,7 @@ function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { active: 
   }
   while (formatIdx < formatGroups.length) {
     const g = formatGroups[formatIdx++];
+    if (!g) break;
     active.push(g);
     seen.add(keyOf(g));
   }

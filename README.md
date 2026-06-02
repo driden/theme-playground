@@ -31,7 +31,7 @@ src/components/
   PaletteStrip.tsx                 22-swatch palette row
   ColorSlotTable.tsx               every editable palette reference, with per-row picker
   PalettePicker.tsx                swatch popover
-test/slot-discovery.test.ts        18 unit tests + 2 fixture tests
+test/slot-discovery.test.ts        unit tests plus golden-fixture tests per theme
 test/fixtures/                     golden discovery output per theme (locks behavior across changes)
 ```
 

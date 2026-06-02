@@ -22,13 +22,16 @@ export function PaletteLegend({ palette }: Props) {
           <div key={g.label} className="legend-group">
             <h3>{g.label}</h3>
             <div className="legend-rows">
-              {present.map(k => (
-                <div key={k} className="legend-row">
-                  <span className="swatch inline" style={{ background: palette[k] }} />
-                  <span className="legend-name">{k}</span>
-                  <span className="legend-hex">{palette[k].toUpperCase()}</span>
-                </div>
-              ))}
+              {present.map(k => {
+                const hex = palette[k] ?? "";
+                return (
+                  <div key={k} className="legend-row">
+                    <span className="swatch inline" style={{ background: hex }} />
+                    <span className="legend-name">{k}</span>
+                    <span className="legend-hex">{hex.toUpperCase()}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
