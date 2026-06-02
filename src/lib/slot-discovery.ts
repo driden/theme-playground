@@ -5,21 +5,11 @@
 
 import * as TreeSitter from "web-tree-sitter";
 import { createRequire } from "node:module";
+import type { SlotRole, SlotMode, ColorSlot } from "./types";
 
-export type SlotRole = "fg" | "bg";
-export type SlotMode = "name-token" | "hex-literal";
+export type { SlotRole, SlotMode, ColorSlot } from "./types";
 
-export type ColorSlot = {
-  id: string;       // stable: `${section}/${field}/${role}/${occ}@${start}`
-  section: string;  // table name; root context -> "format"
-  field: string;    // e.g. "style", "style_user", or "format (#N)" for bracketed
-  role: SlotRole;
-  key: string;      // captured token, original case preserved
-  start: number;    // JS-string index of first char of key
-  end: number;      // exclusive
-};
-
-// Lifted from starship's parse_style_string (src/config.rs:382-389).
+// Lifted from starship's parse_style_string.
 const MODIFIERS = new Set([
   "underline", "bold", "italic", "dimmed", "inverted",
   "blink", "hidden", "strikethrough", "prev_fg", "prev_bg", "none",
@@ -118,7 +108,16 @@ function bracketSlots(
 // ── public API ───────────────────────────────────────────────────────────────
 
 export function discoverSlots(text: string, palette: Set<string>, mode: SlotMode): ColorSlot[] {
-  if (mode === "hex-literal") throw new Error("TODO(v2): hex-literal mode not implemented yet");
+  switch (mode) {
+    case "name-token":
+      break;
+    case "hex-literal":
+      throw new Error("TODO: hex-literal mode not implemented (planned for tmux/fzf support)");
+    default: {
+      const _exh: never = mode;
+      throw new Error(`unreachable: ${_exh as string}`);
+    }
+  }
 
   const tree = parser.parse(text)!;
   const styleOut: ColorSlot[] = [];

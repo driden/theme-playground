@@ -1,20 +1,6 @@
-import type { ColorSlot } from "./lib/slot-discovery";
+import type { AppState, ThemeState, ColorSlot } from "./lib/types";
 
-export type AppState = {
-  app: "starship";
-  fileRaw: string;
-  colorSlots: ColorSlot[];
-  preview: { kind: "ansi"; data: string } | null;
-  error: string | null;
-  dirty: boolean;
-  canUndo: boolean;
-};
-
-export type ThemeState = {
-  name: string;
-  palette: Record<string, string>;
-  apps: AppState[];
-};
+export type { AppState, ThemeState, ColorSlot };
 
 export type ThemeListing = { name: string; current: boolean };
 
