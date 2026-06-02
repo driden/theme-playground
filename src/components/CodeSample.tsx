@@ -1,10 +1,11 @@
 import { Fragment, useMemo, type ReactNode } from "react";
+import type { Palette } from "../lib/types";
 
-type Props = { palette: Record<string, string> };
+type Props = { palette: Palette };
 
 // Roles the sample actually references. If any is missing the theme hasn't
 // been re-extracted under the semantic schema yet — fall back to a message.
-const REQUIRED = [
+const REQUIRED: Array<keyof Palette> = [
   "background", "foreground",
   "comment", "keyword", "string", "function", "type",
   "number", "variable", "constant", "operator", "property", "parameter",
@@ -13,28 +14,28 @@ const REQUIRED = [
 
 type Line = ReactNode[] | ReactNode;
 
-function buildLines(p: Record<string, string>): Line[] {
-  const s = (role: string, text: string): ReactNode => (
-    <span style={{ color: p[role] }}>{text}</span>
+function buildLines(palette: Palette): Line[] {
+  const span = (role: keyof Palette, text: string): ReactNode => (
+    <span style={{ color: palette[role] }}>{text}</span>
   );
 
   return [
-    s("comment", "-- factorial of n; tail-recursive via accumulator"),
-    [s("keyword","local"), " ", s("function","factorial"), " ", s("operator","="), " ", s("keyword","function"), "(", s("parameter","n"), ", ", s("parameter","acc"), ")"],
-    ["  ", s("keyword","if"), " ", s("parameter","n"), " ", s("operator","<="), " ", s("number","1"), " ", s("keyword","then"), " ", s("keyword","return"), " ", s("parameter","acc"), " ", s("operator","or"), " ", s("number","1"), " ", s("keyword","end")],
-    ["  ", s("keyword","return"), " ", s("function","factorial"), "(", s("parameter","n"), " ", s("operator","-"), " ", s("number","1"), ", (", s("parameter","acc"), " ", s("operator","or"), " ", s("number","1"), ") ", s("operator","*"), " ", s("parameter","n"), ")"],
-    s("keyword","end"),
+    span("comment", "-- factorial of n; tail-recursive via accumulator"),
+    [span("keyword","local"), " ", span("function","factorial"), " ", span("operator","="), " ", span("keyword","function"), "(", span("parameter","n"), ", ", span("parameter","acc"), ")"],
+    ["  ", span("keyword","if"), " ", span("parameter","n"), " ", span("operator","<="), " ", span("number","1"), " ", span("keyword","then"), " ", span("keyword","return"), " ", span("parameter","acc"), " ", span("operator","or"), " ", span("number","1"), " ", span("keyword","end")],
+    ["  ", span("keyword","return"), " ", span("function","factorial"), "(", span("parameter","n"), " ", span("operator","-"), " ", span("number","1"), ", (", span("parameter","acc"), " ", span("operator","or"), " ", span("number","1"), ") ", span("operator","*"), " ", span("parameter","n"), ")"],
+    span("keyword","end"),
     "",
-    s("comment", "-- usage"),
-    [s("keyword","local"), " ", s("variable","msg"), " ", s("operator","="), " ", s("string",'"6! = "'), " ", s("operator",".."), " ", s("function","tostring"), "(", s("function","factorial"), "(", s("number","6"), "))"],
-    [s("variable","vim"), ".", s("property","notify"), "(", s("variable","msg"), ", ", s("variable","vim"), ".", s("property","log"), ".", s("property","levels"), ".", s("constant","INFO"), ")"],
+    span("comment", "-- usage"),
+    [span("keyword","local"), " ", span("variable","msg"), " ", span("operator","="), " ", span("string",'"6! = "'), " ", span("operator",".."), " ", span("function","tostring"), "(", span("function","factorial"), "(", span("number","6"), "))"],
+    [span("variable","vim"), ".", span("property","notify"), "(", span("variable","msg"), ", ", span("variable","vim"), ".", span("property","log"), ".", span("property","levels"), ".", span("constant","INFO"), ")"],
     "",
-    [s("error","DiagnosticError"), "  ", s("warning","DiagnosticWarn"), "  ", s("info","DiagnosticInfo"), "  ", s("hint","DiagnosticHint")],
+    [span("error","DiagnosticError"), "  ", span("warning","DiagnosticWarn"), "  ", span("info","DiagnosticInfo"), "  ", span("hint","DiagnosticHint")],
   ];
 }
 
 export function CodeSample({ palette }: Props) {
-  const missing = REQUIRED.filter(r => !palette[r]);
+  const missing = REQUIRED.filter(role => !palette[role]);
   const lines = useMemo(() => missing.length ? null : buildLines(palette), [palette, missing.length]);
 
   if (lines === null) {

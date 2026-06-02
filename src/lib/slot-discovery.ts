@@ -72,7 +72,9 @@ function tokenizeSlice(
   let occ = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    const prefix = m[1]; const name = m[2]!; const lower = name.toLowerCase();
+    const prefix = m[1];
+    const name = m[2]!;
+    const lower = name.toLowerCase();
     if (MODIFIERS.has(lower) || !palette.has(lower)) continue;
     const role: SlotRole = prefix === "bg:" ? "bg" : "fg";
     const start = sliceStart + m.index + (prefix ? prefix.length : 0);

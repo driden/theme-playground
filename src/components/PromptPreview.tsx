@@ -26,19 +26,18 @@ function rgbToHex(triple: string): string | null {
   return "#" + nums.map(n => n.toString(16).padStart(2, "0")).join("").toUpperCase();
 }
 
+function hexAttr(style: string, re: RegExp, attrName: string): string | null {
+  const match = re.exec(style);
+  const hex = match?.[1] ? rgbToHex(match[1]) : null;
+  return hex ? `${attrName}="${hex}"` : null;
+}
+
 function annotateSpans(html: string): string {
   return html.replace(/<span style="([^"]*)">/g, (_match, style: string) => {
-    const fg = RGB_FG_RE.exec(style);
-    const bg = RGB_BG_RE.exec(style);
-    const attrs: string[] = [];
-    if (fg && fg[1]) {
-      const hex = rgbToHex(fg[1]);
-      if (hex) attrs.push(`data-fg="${hex}"`);
-    }
-    if (bg && bg[1]) {
-      const hex = rgbToHex(bg[1]);
-      if (hex) attrs.push(`data-bg="${hex}"`);
-    }
+    const attrs = [
+      hexAttr(style, RGB_FG_RE, "data-fg"),
+      hexAttr(style, RGB_BG_RE, "data-bg"),
+    ].filter((attr): attr is string => attr !== null);
     return `<span style="${style}" ${attrs.join(" ")}>`;
   });
 }
