@@ -1,6 +1,8 @@
-type Props = { palette: Record<string, string> };
+import type { Palette } from "../lib/types";
 
-const GROUPS: Array<{ label: string; keys: string[] }> = [
+type Props = { palette: Palette };
+
+const GROUPS: Array<{ label: string; keys: Array<keyof Palette> }> = [
   { label: "chrome", keys: [
     "background", "foreground", "cursor",
     "selection_background", "selection_foreground",
@@ -15,20 +17,23 @@ const GROUPS: Array<{ label: string; keys: string[] }> = [
 export function PaletteLegend({ palette }: Props) {
   return (
     <div className="palette-legend">
-      {GROUPS.map(g => {
-        const present = g.keys.filter(k => palette[k]);
+      {GROUPS.map(group => {
+        const present = group.keys.filter(key => palette[key]);
         if (present.length === 0) return null;
         return (
-          <div key={g.label} className="legend-group">
-            <h3>{g.label}</h3>
+          <div key={group.label} className="legend-group">
+            <h3>{group.label}</h3>
             <div className="legend-rows">
-              {present.map(k => (
-                <div key={k} className="legend-row">
-                  <span className="swatch inline" style={{ background: palette[k] }} />
-                  <span className="legend-name">{k}</span>
-                  <span className="legend-hex">{palette[k].toUpperCase()}</span>
-                </div>
-              ))}
+              {present.map(key => {
+                const hex = palette[key] ?? "";
+                return (
+                  <div key={key} className="legend-row">
+                    <span className="swatch inline" style={{ background: hex }} />
+                    <span className="legend-name">{key}</span>
+                    <span className="legend-hex">{hex.toUpperCase()}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
-import type { ColorSlot } from "../lib/slot-discovery";
-import type { FormatToken } from "../App";
+import { isPaletteRole, type ColorSlot, type SlotRole, type Palette } from "../lib/types";
+import type { FormatToken } from "../lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
 
 type Props = {
   slots: ColorSlot[];
-  palette: Record<string, string>;
+  palette: Palette;
   formatTokens: FormatToken[];
   onEdit: (slotId: string, newKey: string) => void;
   onSlotDisappeared: () => void;
-  onHoverSlot: (h: { hex: string; role: "fg" | "bg" } | null) => void;
+  onHoverSlot: (hover: { hex: string; role: SlotRole } | null) => void;
 };
 
-type Group = {
+export type Group = {
   section: string;
   field: string;
   fg?: ColorSlot;
@@ -21,61 +21,62 @@ type Group = {
 
 // One Group per (section, field). Slots arrive interleaved by role; collapse
 // them so we render one row per pair.
-function groupSlots(slots: ColorSlot[]): Group[] {
+export function groupSlots(slots: ColorSlot[]): Group[] {
   const map = new Map<string, Group>();
-  const order: string[] = [];
-  for (const s of slots) {
-    const k = `${s.section}/${s.field}`;
-    if (!map.has(k)) {
-      map.set(k, { section: s.section, field: s.field });
-      order.push(k);
+  for (const slot of slots) {
+    const key = `${slot.section}/${slot.field}`;
+    let group = map.get(key);
+    if (!group) {
+      group = { section: slot.section, field: slot.field };
+      map.set(key, group);
     }
-    const g = map.get(k)!;
-    if (s.role === "fg") g.fg = s;
-    else g.bg = s;
+    if (slot.role === "fg") group.fg = slot;
+    else group.bg = slot;
   }
-  return order.map(k => map.get(k)!);
+  return [...map.values()];
 }
 
 // Order `groups` to match the visual order of the rendered prompt by walking
 // `formatTokens`: each transition pulls the next format-section group; each
 // module reference pulls all that section's groups. Anything left over is
 // "defined but unused".
-function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { active: Group[]; inactive: Group[] } {
+export function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { active: Group[]; inactive: Group[] } {
   const bySection = new Map<string, Group[]>();
-  for (const g of groups) {
-    if (!bySection.has(g.section)) bySection.set(g.section, []);
-    bySection.get(g.section)!.push(g);
+  for (const group of groups) {
+    const arr = bySection.get(group.section) ?? [];
+    arr.push(group);
+    bySection.set(group.section, arr);
   }
   const formatGroups = bySection.get("format") ?? [];
   const active: Group[] = [];
   const seen = new Set<string>();
-  const keyOf = (g: Group) => `${g.section}/${g.field}`;
+  const keyOf = (group: Group) => `${group.section}/${group.field}`;
   let formatIdx = 0;
 
-  for (const tok of formatTokens) {
-    if (tok.type === "transition") {
+  for (const token of formatTokens) {
+    if (token.type === "transition") {
       if (formatIdx < formatGroups.length) {
-        const g = formatGroups[formatIdx++];
-        active.push(g);
-        seen.add(keyOf(g));
+        const group = formatGroups[formatIdx++]!;
+        active.push(group);
+        seen.add(keyOf(group));
       }
     } else {
-      for (const g of (bySection.get(tok.name) ?? [])) {
-        if (!seen.has(keyOf(g))) {
-          active.push(g);
-          seen.add(keyOf(g));
+      for (const group of bySection.get(token.name) ?? []) {
+        if (!seen.has(keyOf(group))) {
+          active.push(group);
+          seen.add(keyOf(group));
         }
       }
     }
   }
-  while (formatIdx < formatGroups.length) {
-    const g = formatGroups[formatIdx++];
-    active.push(g);
-    seen.add(keyOf(g));
+  // More format groups than transitions — anything left is still active.
+  for (let i = formatIdx; i < formatGroups.length; i++) {
+    const group = formatGroups[i]!;
+    active.push(group);
+    seen.add(keyOf(group));
   }
 
-  const inactive = groups.filter(g => !seen.has(keyOf(g)));
+  const inactive = groups.filter(group => !seen.has(keyOf(group)));
   return { active, inactive };
 }
 
@@ -83,7 +84,7 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (openSlotId && !slots.find(s => s.id === openSlotId)) {
+    if (openSlotId && !slots.find(slot => slot.id === openSlotId)) {
       setOpenSlotId(null);
       onSlotDisappeared();
     }
@@ -94,7 +95,8 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
 
   function renderCell(slot?: ColorSlot) {
     if (!slot) return <span className="empty-cell">—</span>;
-    const hex = (palette[slot.key.toLowerCase()] ?? "#000").toUpperCase();
+    const lowerKey = slot.key.toLowerCase();
+    const hex = (isPaletteRole(lowerKey) ? palette[lowerKey] : "#000").toUpperCase();
     return (
       <span
         className="slot-cell"
@@ -111,7 +113,7 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
         {openSlotId === slot.id && (
           <PalettePicker
             palette={palette}
-            onPick={k => { onEdit(slot.id, k); setOpenSlotId(null); }}
+            onPick={key => { onEdit(slot.id, key); setOpenSlotId(null); }}
             onClose={() => setOpenSlotId(null)}
           />
         )}
@@ -119,13 +121,13 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
     );
   }
 
-  function renderRow(g: Group, key: string) {
+  function renderRow(group: Group, key: string) {
     return (
       <tr key={key}>
-        <td>{g.section}</td>
-        <td>{g.field}</td>
-        <td>{renderCell(g.bg)}</td>
-        <td>{renderCell(g.fg)}</td>
+        <td>{group.section}</td>
+        <td>{group.field}</td>
+        <td>{renderCell(group.bg)}</td>
+        <td>{renderCell(group.fg)}</td>
       </tr>
     );
   }
@@ -135,7 +137,7 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
     return (
       <>
         <tr className="group-header"><td colSpan={4}>{label}</td></tr>
-        {items.map((g, i) => renderRow(g, `${prefix}${i}`))}
+        {items.map((item, i) => renderRow(item, `${prefix}${i}`))}
       </>
     );
   }
