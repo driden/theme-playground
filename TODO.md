@@ -21,6 +21,17 @@ Proposed fix (see chat history for full design):
 2. Change `/api/themes` response to `{ themesDir, themes }` so the frontend has the path for both the empty-state and the error banner.
 3. Frontend empty-state component: "No themes in `<themesDir>`. Set `THEMES_DIR=…` or populate the directory."
 
+### `.env` support for runtime configuration
+Currently `THEMES_DIR` is the only knob and users must `export` it each shell session (or set up direnv). Bun auto-loads `.env` files at the working directory — add:
+- `.env.example` checked into the repo, documenting available vars (`THEMES_DIR`, and the others below as they get added).
+- `.env` added to `.gitignore` so per-machine config doesn't leak.
+- README updated to mention `cp .env.example .env` as the first-run step.
+
+Other defaults worth making overridable while here:
+- `PORT` — hardcoded to `5174` in `server.ts`.
+- `DRAFTS_DIR` — currently `./.drafts` relative to `server.ts`.
+- `STARSHIP_BINARY` — currently the literal `"starship"` on PATH.
+
 ### Starship subprocess has no timeout
 `server.ts` `renderStarship` — `Bun.spawn` runs `starship prompt` with no timeout. A hung starship (broken config, infinite recursion in a custom command) blocks the request indefinitely and the browser tab spins forever. Use `Bun.spawn`'s `timeout` option or wrap in an `AbortController` with ~5s budget.
 
