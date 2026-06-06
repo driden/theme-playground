@@ -8,8 +8,8 @@ export type HexColor = z.infer<typeof HexColorSchema>;
 
 // Semantic palette roles, established when extracting themes from neovim.
 // Three groups: chrome (UI surface), syntax (token kinds), diagnostics (LSP).
-// Single source of truth: the type is derived from the array, so adding a
-// name here registers it for both compile-time and runtime use.
+// This list is the canonical contract — must match the role table in
+// nvim-theme-extractor.lua so every extracted colors.toml validates here.
 const SEMANTIC_ROLES = [
   // chrome
   "background",
@@ -17,7 +17,6 @@ const SEMANTIC_ROLES = [
   "cursor",
   "selection_background",
   "selection_foreground",
-  "accent",
   // syntax
   "comment",
   "keyword",
