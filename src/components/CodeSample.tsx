@@ -55,6 +55,7 @@ export function CodeSample({ palette }: Props) {
       style={{ background: palette.background, color: palette.foreground }}
     >
       {lines.map((line, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: lines is a static literal that never reorders
         <Fragment key={i}>
           {line}
           {i < lines.length - 1 ? "\n" : null}

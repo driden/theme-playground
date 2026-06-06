@@ -1,19 +1,41 @@
-import type { AppState, ThemeState, ColorSlot } from "./lib/types";
+import {
+  AppStateSchema,
+  ThemeStateSchema,
+  ThemeListingSchema,
+  ErrorResponseSchema,
+  errMessage,
+  type AppState,
+  type ThemeState,
+  type ColorSlot,
+  type ThemeListing,
+} from "./lib/types";
+import { z } from "zod";
 
-export type { AppState, ThemeState, ColorSlot };
+export type { AppState, ThemeState, ColorSlot, ThemeListing };
 
-export type ThemeListing = { name: string; current: boolean };
+const ThemeListingArraySchema = z.array(ThemeListingSchema);
+
+async function parseOrThrow<T>(res: Response, schema: z.ZodType<T>, context: string): Promise<T> {
+  const body: unknown = await res.json();
+  if (!res.ok) {
+    const parsed = ErrorResponseSchema.safeParse(body);
+    throw new Error(parsed.success ? parsed.data.error : `${context} failed (${res.status})`);
+  }
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    throw new Error(`${context} response shape invalid: ${errMessage(result.error)}`);
+  }
+  return result.data;
+}
 
 export async function listThemes(): Promise<ThemeListing[]> {
   const res = await fetch("/api/themes");
-  if (!res.ok) throw new Error(`GET /api/themes failed: ${res.status}`);
-  return res.json();
+  return parseOrThrow(res, ThemeListingArraySchema, "GET /api/themes");
 }
 
 export async function getTheme(name: string): Promise<ThemeState> {
   const res = await fetch(`/api/themes/${name}`);
-  if (!res.ok) throw new Error(`GET /api/themes/${name} failed: ${res.status}`);
-  return res.json();
+  return parseOrThrow(res, ThemeStateSchema, `GET /api/themes/${name}`);
 }
 
 export async function editSlot(
@@ -26,9 +48,7 @@ export async function editSlot(
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ slotId, newPaletteKey }),
   });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error ?? `edit failed (${res.status})`);
-  return body as AppState;
+  return parseOrThrow(res, AppStateSchema, "edit");
 }
 
 async function postAction(
@@ -36,9 +56,7 @@ async function postAction(
   action: "undo" | "save" | "discard",
 ): Promise<AppState> {
   const res = await fetch(`/api/themes/${themeName}/starship/${action}`, { method: "POST" });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error ?? `${action} failed (${res.status})`);
-  return body as AppState;
+  return parseOrThrow(res, AppStateSchema, action);
 }
 
 export const undoEdit = (themeName: string) => postAction(themeName, "undo");

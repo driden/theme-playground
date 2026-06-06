@@ -27,6 +27,7 @@ describe("parseFormatTokens", () => {
     ]);
   });
 
+  // biome-ignore lint/suspicious/noTemplateCurlyInString: ${env_var} / ${USER} are literals describing starship's brace syntax, not real template expressions
   test("braced ${env_var} module references", () => {
     const text = `format = "\${USER}$os"\n`;
     expect(parseFormatTokens(text)).toEqual([

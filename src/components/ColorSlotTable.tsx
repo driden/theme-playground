@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isPaletteRole, type ColorSlot, type SlotRole, type Palette } from "../lib/types";
+import { assertNonNull } from "../lib/assert";
 import type { FormatToken } from "../lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
 
@@ -25,13 +26,10 @@ export function groupSlots(slots: ColorSlot[]): Group[] {
   const map = new Map<string, Group>();
   for (const slot of slots) {
     const key = `${slot.section}/${slot.field}`;
-    let group = map.get(key);
-    if (!group) {
-      group = { section: slot.section, field: slot.field };
-      map.set(key, group);
-    }
+    const group = map.get(key) ?? { section: slot.section, field: slot.field };
     if (slot.role === "fg") group.fg = slot;
     else group.bg = slot;
+    map.set(key, group);
   }
   return [...map.values()];
 }
@@ -50,19 +48,17 @@ export function orderByPrompt(
     arr.push(group);
     bySection.set(group.section, arr);
   }
-  const formatGroups = bySection.get("format") ?? [];
+  const formatQueue = [...(bySection.get("format") ?? [])];
   const active: Group[] = [];
   const seen = new Set<string>();
   const keyOf = (group: Group) => `${group.section}/${group.field}`;
-  let formatIdx = 0;
 
   for (const token of formatTokens) {
     if (token.type === "transition") {
-      if (formatIdx < formatGroups.length) {
-        const group = formatGroups[formatIdx++]!;
-        active.push(group);
-        seen.add(keyOf(group));
-      }
+      const group = formatQueue.shift();
+      assertNonNull(group, "orderByPrompt: transition with no remaining formatGroup");
+      active.push(group);
+      seen.add(keyOf(group));
     } else {
       for (const group of bySection.get(token.name) ?? []) {
         if (!seen.has(keyOf(group))) {
@@ -73,8 +69,7 @@ export function orderByPrompt(
     }
   }
   // More format groups than transitions — anything left is still active.
-  for (let i = formatIdx; i < formatGroups.length; i++) {
-    const group = formatGroups[i]!;
+  for (const group of formatQueue) {
     active.push(group);
     seen.add(keyOf(group));
   }

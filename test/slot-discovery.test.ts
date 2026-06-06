@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { discoverSlots, paletteKeysFromStarshipToml } from "../src/lib/slot-discovery";
+import { assertNonNull } from "../src/lib/assert";
 
 const PALETTE = new Set([
   "accent",
@@ -120,15 +121,17 @@ describe("discoverSlots (name-token mode)", () => {
   test("byte-offsets point at the start of the key name", () => {
     const text = `style = "bg:color12 fg:foreground"\n`;
     const slots = discoverSlots(text, PALETTE, "name-token");
-    const slot = slots.find(s => s.key === "color12")!;
+    const slot = slots.find(s => s.key === "color12");
+    assertNonNull(slot, "test setup: slot 'color12' not found");
     expect(text.slice(slot.start, slot.end)).toBe("color12");
   });
 
   test("preserves write-back exactness via splice", () => {
     const text = `style = "bg:color12 fg:foreground"\n`;
     const slots = discoverSlots(text, PALETTE, "name-token");
-    const slot = slots.find(s => s.key === "color12")!;
-    const next = text.slice(0, slot.start) + "color3" + text.slice(slot.end);
+    const slot = slots.find(s => s.key === "color12");
+    assertNonNull(slot, "test setup: slot 'color12' not found");
+    const next = `${text.slice(0, slot.start)}color3${text.slice(slot.end)}`;
     expect(next).toBe(`style = "bg:color3 fg:foreground"\n`);
   });
 

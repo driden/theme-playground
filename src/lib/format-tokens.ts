@@ -33,8 +33,7 @@ export function parseFormatTokens(fileRaw: string): FormatToken[] {
     formatMatch ? (formatMatch[1] ?? formatMatch[2] ?? formatMatch[3] ?? "") : ""
   ).replace(COMMENT_LINE_RE, "");
   const tokens: FormatToken[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = TOKEN_RE.exec(content)) !== null) {
+  for (const match of content.matchAll(TOKEN_RE)) {
     if (match[0].startsWith("](")) tokens.push({ type: "transition" });
     else if (match[1]) tokens.push({ type: "module", name: match[1] });
   }

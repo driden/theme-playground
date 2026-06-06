@@ -25,7 +25,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <div className="error-boundary">
           <h2>Something went wrong.</h2>
           <pre>{errMessage(this.state.error)}</pre>
-          <button onClick={this.handleReload}>reload</button>
+          <button type="button" onClick={this.handleReload}>
+            reload
+          </button>
         </div>
       );
     }

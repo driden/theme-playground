@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import TOML from "@iarna/toml";
-import { PaletteSchema, type Palette } from "./types";
+import { PaletteSchema, type Palette, type ThemeListing } from "./types";
 
 // THEMES_DIR can be pointed at any directory containing per-theme subdirs
 // (each with colors.toml + starship.toml). Defaults to ../themes for a
@@ -11,7 +11,11 @@ import { PaletteSchema, type Palette } from "./types";
 export const THEMES_DIR =
   process.env.THEMES_DIR ?? path.resolve(import.meta.dir, "../../../themes");
 
-export type ThemeListing = { name: string; current: boolean };
+async function readCurrentThemeName(): Promise<string> {
+  const namePath = path.join(os.homedir(), ".config/themes/current/name");
+  const nameFile = Bun.file(namePath);
+  return (await nameFile.exists()) ? (await nameFile.text()).trim() : "";
+}
 
 export async function listThemes(): Promise<ThemeListing[]> {
   const entries = await fs.readdir(THEMES_DIR, { withFileTypes: true });
@@ -19,12 +23,7 @@ export async function listThemes(): Promise<ThemeListing[]> {
     .filter(entry => entry.isDirectory() && entry.name !== "templates")
     .map(entry => entry.name)
     .sort();
-
-  let current = "";
-  const namePath = path.join(os.homedir(), ".config/themes/current/name");
-  const nameFile = Bun.file(namePath);
-  if (await nameFile.exists()) current = (await nameFile.text()).trim();
-
+  const current = await readCurrentThemeName();
   return names.map(name => ({ name, current: name === current }));
 }
 

@@ -127,16 +127,23 @@ export default function App() {
         <ThemeSelector themes={themes} active={activeName} onChange={setActiveName} />
         <div className="header-actions">
           {currentApp?.dirty && <span className="dirty-marker">● unsaved</span>}
-          <button onClick={handleUndo} disabled={!currentApp?.canUndo}>
+          <button type="button" onClick={handleUndo} disabled={!currentApp?.canUndo}>
             undo
           </button>
-          <button onClick={handleDiscard} disabled={!currentApp?.dirty}>
+          <button type="button" onClick={handleDiscard} disabled={!currentApp?.dirty}>
             discard
           </button>
-          <button onClick={handleSave} disabled={!currentApp?.dirty} className="primary">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!currentApp?.dirty}
+            className="primary"
+          >
             save
           </button>
-          <button onClick={handleReload}>reload</button>
+          <button type="button" onClick={handleReload}>
+            reload
+          </button>
         </div>
       </header>
       {error && <div className="error-banner">{error}</div>}

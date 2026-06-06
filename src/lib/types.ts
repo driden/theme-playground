@@ -63,42 +63,56 @@ const paletteShape = Object.fromEntries(
 ) as { [K in PaletteRole]: typeof HexColorSchema };
 export const PaletteSchema = z.object(paletteShape satisfies Record<PaletteRole, unknown>);
 
-export type SlotRole = "fg" | "bg";
+export const SlotRoleSchema = z.enum(["fg", "bg"]);
+export type SlotRole = z.infer<typeof SlotRoleSchema>;
+
 export type SlotMode = "name-token" | "hex-literal";
 
-export type ColorSlot = {
-  id: string; // stable: `${section}/${field}/${role}/${occ}@${start}`
-  section: string; // table name; root context -> "format"
-  field: string; // e.g. "style", "style_user", or "format (#N)" for bracketed
-  role: SlotRole;
-  key: string; // captured token, original case preserved
-  start: number; // JS-string index of first char of key
-  end: number; // exclusive
-};
+export const ColorSlotSchema = z.object({
+  id: z.string(), // stable: `${section}/${field}/${role}/${occ}@${start}`
+  section: z.string(), // table name; root context -> "format"
+  field: z.string(), // e.g. "style", "style_user", or "format (#N)" for bracketed
+  role: SlotRoleSchema,
+  key: z.string(), // captured token, original case preserved
+  start: z.number(), // JS-string index of first char of key
+  end: z.number(), // exclusive
+});
+export type ColorSlot = z.infer<typeof ColorSlotSchema>;
 
 export type SlotId = string & { readonly __brand: "SlotId" };
 export const asSlotId = (s: string): SlotId => s as SlotId;
 
 export const APPS = ["starship"] as const;
-export type AppName = (typeof APPS)[number];
+export const AppNameSchema = z.enum(APPS);
+export type AppName = z.infer<typeof AppNameSchema>;
 export const isAppName = (s: string): s is AppName => (APPS as readonly string[]).includes(s);
 
-export type AppState = {
-  app: AppName;
-  fileRaw: string;
-  colorSlots: ColorSlot[];
-  preview: { kind: "ansi"; data: string } | null;
-  previewError: string | null;
-  slotError: string | null;
-  dirty: boolean;
-  canUndo: boolean;
-};
+export const AppStateSchema = z.object({
+  app: AppNameSchema,
+  fileRaw: z.string(),
+  colorSlots: z.array(ColorSlotSchema),
+  preview: z.union([z.null(), z.object({ kind: z.literal("ansi"), data: z.string() })]),
+  previewError: z.string().nullable(),
+  slotError: z.string().nullable(),
+  dirty: z.boolean(),
+  canUndo: z.boolean(),
+});
+export type AppState = z.infer<typeof AppStateSchema>;
 
-export type ThemeState = {
-  name: string;
-  palette: Palette;
-  apps: AppState[];
-};
+export const ThemeStateSchema = z.object({
+  name: z.string(),
+  palette: PaletteSchema,
+  apps: z.array(AppStateSchema),
+});
+export type ThemeState = z.infer<typeof ThemeStateSchema>;
+
+export const ThemeListingSchema = z.object({
+  name: z.string(),
+  current: z.boolean(),
+});
+export type ThemeListing = z.infer<typeof ThemeListingSchema>;
+
+export const ErrorResponseSchema = z.object({ error: z.string() });
 
 export const SlotEditBodySchema = z.object({
   slotId: z.string().min(1),

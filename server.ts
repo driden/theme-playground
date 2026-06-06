@@ -25,16 +25,27 @@ class HttpError extends Error {
   }
 }
 
-// Match a path against a regex and return its capture groups as a non-null
-// tuple. Returns null on no-match so callers can branch on null instead of
-// destructuring with non-null assertions everywhere.
-function matchRoute(pathname: string, re: RegExp): string[] | null {
-  const m = pathname.match(re);
-  if (!m) return null;
-  return m.slice(1) as string[];
-}
+// Recursively builds a fixed-length tuple of `string`, used to type
+// matchRoute's return so call sites can destructure without a cast.
+type StringTuple<N extends number, Acc extends string[] = []> = Acc["length"] extends N
+  ? Acc
+  : StringTuple<N, [...Acc, string]>;
 
-// ── path / draft helpers ─────────────────────────────────────────────────────
+// Match a path against a regex with a known number of mandatory capture
+// groups. Returns a typed tuple of `arity` strings on match, null otherwise.
+function matchRoute<N extends number>(
+  pathname: string,
+  re: RegExp,
+  arity: N,
+): StringTuple<N> | null {
+  const match = pathname.match(re);
+  if (!match) return null;
+  const caps = match.slice(1);
+  if (caps.length !== arity) return null;
+  // Sound: we just validated `caps.length === arity`, and regex capture groups
+  // without `?` always return string when the whole match succeeds.
+  return caps as StringTuple<N>;
+}
 
 function originalPath(theme: string, app: AppName): string {
   return path.join(THEMES_DIR, theme, `${app}.toml`);
@@ -60,8 +71,6 @@ async function isDirty(theme: string, app: AppName): Promise<boolean> {
   return draftText !== originalText;
 }
 
-// ── undo stack (in-memory, per theme+app) ────────────────────────────────────
-
 const HISTORY_LIMIT = 50;
 const histories = new Map<string, string[]>();
 const histKey = (theme: string, app: AppName) => `${theme}/${app}`;
@@ -83,8 +92,6 @@ function clearHistory(theme: string, app: AppName) {
   histories.delete(histKey(theme, app));
 }
 
-// ── request-validation helpers ───────────────────────────────────────────────
-
 async function assertThemeExists(themeName: string): Promise<void> {
   if (!(await themeExists(themeName))) throw new HttpError(404, "unknown theme");
 }
@@ -92,8 +99,6 @@ async function assertThemeExists(themeName: string): Promise<void> {
 function assertAppName(app: string): asserts app is AppName {
   if (!isAppName(app)) throw new HttpError(404, `app '${app}' not supported`);
 }
-
-// ── starship subprocess ──────────────────────────────────────────────────────
 
 async function renderStarship(
   configPath: string,
@@ -133,20 +138,23 @@ async function renderStarship(
   }
 }
 
-// ── theme state ──────────────────────────────────────────────────────────────
+function tryDiscoverSlots(
+  fileRaw: string,
+  palette: Set<string>,
+): { colorSlots: ColorSlot[]; slotError: string | null } {
+  try {
+    return { colorSlots: discoverSlots(fileRaw, palette, "name-token"), slotError: null };
+  } catch (e: unknown) {
+    console.error(e);
+    return { colorSlots: [], slotError: errMessage(e) };
+  }
+}
 
 async function buildAppState(themeName: string): Promise<AppState> {
   const draft = await ensureDraft(themeName, "starship");
   const fileRaw = await fs.readFile(draft, "utf8");
   const palette = paletteKeysFromStarshipToml(fileRaw);
-  let colorSlots: ColorSlot[] = [];
-  let slotError: string | null = null;
-  try {
-    colorSlots = discoverSlots(fileRaw, palette, "name-token");
-  } catch (e: unknown) {
-    console.error(e);
-    slotError = errMessage(e);
-  }
+  const { colorSlots, slotError } = tryDiscoverSlots(fileRaw, palette);
   const { ansi, error: previewError } = await renderStarship(draft);
   return {
     app: "starship",
@@ -168,8 +176,6 @@ async function buildThemeState(themeName: string): Promise<ThemeState> {
   };
 }
 
-// ── http ─────────────────────────────────────────────────────────────────────
-
 function json(value: unknown, status = 200): Response {
   return new Response(JSON.stringify(value), {
     status,
@@ -187,9 +193,9 @@ const server = Bun.serve({
         return json(await listThemes());
       }
 
-      const themeCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)$/);
+      const themeCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)$/, 1);
       if (req.method === "GET" && themeCaps) {
-        const [themeName] = themeCaps as [string];
+        const [themeName] = themeCaps;
         await assertThemeExists(themeName);
         return json(await buildThemeState(themeName));
       }
@@ -198,13 +204,10 @@ const server = Bun.serve({
       const actionCaps = matchRoute(
         pathname,
         /^\/api\/themes\/([\w-]+)\/([\w-]+)\/(undo|save|discard)$/,
+        3,
       );
       if (req.method === "POST" && actionCaps) {
-        const [themeName, app, action] = actionCaps as [
-          string,
-          string,
-          "undo" | "save" | "discard",
-        ];
+        const [themeName, app, action] = actionCaps;
         await assertThemeExists(themeName);
         assertAppName(app);
         const draft = draftPath(themeName, app);
@@ -227,14 +230,14 @@ const server = Bun.serve({
       }
 
       // POST /api/themes/:name/:app — slot edit (writes to draft)
-      const editCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)$/);
+      const editCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)$/, 2);
       if (req.method === "POST" && editCaps) {
-        const [themeName, app] = editCaps as [string, string];
+        const [themeName, app] = editCaps;
         await assertThemeExists(themeName);
         assertAppName(app);
 
         const parsed = SlotEditBodySchema.safeParse(await req.json());
-        if (!parsed.success) throw new HttpError(400, "invalid body: " + parsed.error.message);
+        if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
         const { slotId, newPaletteKey } = parsed.data;
 
         const draft = await ensureDraft(themeName, app);

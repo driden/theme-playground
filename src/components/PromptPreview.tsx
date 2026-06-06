@@ -70,6 +70,7 @@ export function PromptPreview({ ansi, highlight }: Props) {
   return (
     <>
       {highlightCss && <style>{highlightCss}</style>}
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: rendering ansi_up's HTML output, which sanitizes its input */}
       <pre className="prompt-preview" dangerouslySetInnerHTML={{ __html: html }} />
     </>
   );
