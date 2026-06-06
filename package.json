@@ -7,7 +7,13 @@
     "dev:server": "bun --hot server.ts",
     "dev:web": "vite",
     "build": "tsc --noEmit && vite build",
-    "test": "bun test"
+    "test": "bun test",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write ."
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
@@ -19,6 +25,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",

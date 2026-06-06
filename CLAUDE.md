@@ -34,6 +34,42 @@ Concrete patterns this implies in this codebase:
 - Use `catch (e: unknown)` plus the `errMessage(e)` helper. Never `catch (e: any)`.
 - Use exhaustive `switch` with a `never` default on discriminated unions (`SlotMode`) so future variants fail to compile.
 
+## Favor `const` and immutability
+
+Prefer `const` and immutable transformations (`map` / `filter` / `reduce` / spread) over `let` + in-place mutation. Reach for `let` only when the functional rewrite is genuinely worse (deep recursion needing a counter, performance-critical hot loop).
+
+```ts
+// Prefer
+const tokens = matches.flatMap(parseToken);
+const next = { ...state, dirty: true };
+
+// Over
+const tokens: Token[] = [];
+for (const match of matches) tokens.push(parseToken(match));
+state.dirty = true;
+```
+
+When the lambda just forwards its argument (`x => fn(x)`), drop the lambda and pass the function directly.
+
+The point: every line reads top-to-bottom with one meaning — no scanning for reassignments, no "did this change?" debugging.
+
+## No `!`, `!!`, or magical `as` casts
+
+Don't write `!` non-null assertions, `!!` truthy-coercions used as narrowing, or `as` casts that exist purely to silence the compiler. They turn compile-time errors into runtime surprises (`Cannot read properties of undefined`) and lie about the data shape.
+
+Use instead:
+- **Assertion functions** — `assertNonNull(x, label): asserts x is T` in `src/lib/assert.ts`. Narrows the type AND throws a useful error if the invariant fails.
+- **Return-helpers** for repeated patterns — `childAt(node, i)` in `src/lib/slot-discovery.ts` wraps the assertion so call sites stay one-liners.
+- **Runtime guards** at boundaries — `isPaletteRole(s)` narrows a `string` to `PaletteRole` only after a Set lookup.
+- **Refactor to eliminate the nullable** — `for (const m of text.matchAll(re))` instead of `while ((m = re.exec(text)) !== null) { … m[1]! … }`; `queue.shift()` instead of `array[i++]!`.
+
+**Casts that ARE acceptable:**
+- At runtime-validated boundaries (`SchemaName.parse(x)` returns a typed value; inside a typed helper, `as Tuple<N>` after a `.length === N` check is sound).
+- Branded-type constructors (`asSlotId(s)`).
+- The cast must be **co-located with the validation that makes it sound**.
+
+If you're tempted to write `!` or `as`, ask: "What runtime check would prove this is safe?" If you can name one, write an assertion function. If you can't, the nullable / loose type is real and needs handling.
+
 ## Maintaining shared types
 
 `src/lib/types.ts` is the single source of truth for shared types across server and client. Don't redeclare the same type elsewhere.
@@ -65,8 +101,14 @@ Don't gut existing tests when refactoring — if a refactor would invalidate a t
 ## Out of scope for this codebase
 
 - **Same-origin / CSRF guards** — this is a localhost-only personal dev tool. The user has explicitly deprioritized network-layer security hardening.
-- **Linting** — no linter is installed; not needed at this size.
+- **Accessibility enforcement** — `lint/a11y/useKeyWithClickEvents` and `lint/a11y/noStaticElementInteractions` are disabled in `biome.json`. `useButtonType` is kept on. Localhost dev tool; not worth the cost of converting swatches to ARIA-correct buttons.
 - **Path-traversal hardening beyond the `[\w-]+` route regex** — also a localhost-only concern.
+
+## Tooling
+
+- **Biome 2.x** is the formatter + linter. `bun run check` runs both; `bun run check:fix` applies. CI hook can be `bun run check`.
+- The linter runs with `recommended` rules, minus the a11y exceptions above.
+- One inline opt-out: `CodeSample.tsx` carries `// biome-ignore-all format` because its inner arrays represent visual lines of rendered code; Biome's default would expand each to one-token-per-line and destroy the structure.
 
 ## What "good" looks like in a PR here
 

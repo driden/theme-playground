@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isPaletteRole, type ColorSlot, type SlotRole, type Palette } from "../lib/types";
+import { assertNonNull } from "../lib/assert";
 import type { FormatToken } from "../lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
 
@@ -25,13 +26,10 @@ export function groupSlots(slots: ColorSlot[]): Group[] {
   const map = new Map<string, Group>();
   for (const slot of slots) {
     const key = `${slot.section}/${slot.field}`;
-    let group = map.get(key);
-    if (!group) {
-      group = { section: slot.section, field: slot.field };
-      map.set(key, group);
-    }
+    const group = map.get(key) ?? { section: slot.section, field: slot.field };
     if (slot.role === "fg") group.fg = slot;
     else group.bg = slot;
+    map.set(key, group);
   }
   return [...map.values()];
 }
@@ -40,26 +38,27 @@ export function groupSlots(slots: ColorSlot[]): Group[] {
 // `formatTokens`: each transition pulls the next format-section group; each
 // module reference pulls all that section's groups. Anything left over is
 // "defined but unused".
-export function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { active: Group[]; inactive: Group[] } {
+export function orderByPrompt(
+  groups: Group[],
+  formatTokens: FormatToken[],
+): { active: Group[]; inactive: Group[] } {
   const bySection = new Map<string, Group[]>();
   for (const group of groups) {
     const arr = bySection.get(group.section) ?? [];
     arr.push(group);
     bySection.set(group.section, arr);
   }
-  const formatGroups = bySection.get("format") ?? [];
+  const formatQueue = [...(bySection.get("format") ?? [])];
   const active: Group[] = [];
   const seen = new Set<string>();
   const keyOf = (group: Group) => `${group.section}/${group.field}`;
-  let formatIdx = 0;
 
   for (const token of formatTokens) {
     if (token.type === "transition") {
-      if (formatIdx < formatGroups.length) {
-        const group = formatGroups[formatIdx++]!;
-        active.push(group);
-        seen.add(keyOf(group));
-      }
+      const group = formatQueue.shift();
+      assertNonNull(group, "orderByPrompt: transition with no remaining formatGroup");
+      active.push(group);
+      seen.add(keyOf(group));
     } else {
       for (const group of bySection.get(token.name) ?? []) {
         if (!seen.has(keyOf(group))) {
@@ -70,8 +69,7 @@ export function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { a
     }
   }
   // More format groups than transitions — anything left is still active.
-  for (let i = formatIdx; i < formatGroups.length; i++) {
-    const group = formatGroups[i]!;
+  for (const group of formatQueue) {
     active.push(group);
     seen.add(keyOf(group));
   }
@@ -80,7 +78,14 @@ export function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { a
   return { active, inactive };
 }
 
-export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDisappeared, onHoverSlot }: Props) {
+export function ColorSlotTable({
+  slots,
+  palette,
+  formatTokens,
+  onEdit,
+  onSlotDisappeared,
+  onHoverSlot,
+}: Props) {
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,7 +101,7 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
   function renderCell(slot?: ColorSlot) {
     if (!slot) return <span className="empty-cell">—</span>;
     const lowerKey = slot.key.toLowerCase();
-    const hex = (isPaletteRole(lowerKey) ? palette[lowerKey] : "#000").toUpperCase();
+    const hex = ((isPaletteRole(lowerKey) ? palette[lowerKey] : undefined) ?? "#000").toUpperCase();
     return (
       <span
         className="slot-cell"
@@ -113,7 +118,10 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
         {openSlotId === slot.id && (
           <PalettePicker
             palette={palette}
-            onPick={key => { onEdit(slot.id, key); setOpenSlotId(null); }}
+            onPick={key => {
+              onEdit(slot.id, key);
+              setOpenSlotId(null);
+            }}
             onClose={() => setOpenSlotId(null)}
           />
         )}
@@ -136,7 +144,9 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
     if (items.length === 0) return null;
     return (
       <>
-        <tr className="group-header"><td colSpan={4}>{label}</td></tr>
+        <tr className="group-header">
+          <td colSpan={4}>{label}</td>
+        </tr>
         {items.map((item, i) => renderRow(item, `${prefix}${i}`))}
       </>
     );
@@ -145,7 +155,12 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
   return (
     <table className="slot-table">
       <thead>
-        <tr><th>Section</th><th>Field</th><th>BG</th><th>FG</th></tr>
+        <tr>
+          <th>Section</th>
+          <th>Field</th>
+          <th>BG</th>
+          <th>FG</th>
+        </tr>
       </thead>
       <tbody>
         {renderGroup("in your prompt", activeGroups, "a")}

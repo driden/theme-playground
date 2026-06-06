@@ -1,3 +1,6 @@
+// biome-ignore-all format: each inner array represents one visual line of the
+// rendered sample — keeping tokens packed per line is more readable than
+// one-token-per-line. Format opts out for this file only.
 import { Fragment, useMemo, type ReactNode } from "react";
 import type { Palette } from "../lib/types";
 
@@ -52,6 +55,7 @@ export function CodeSample({ palette }: Props) {
       style={{ background: palette.background, color: palette.foreground }}
     >
       {lines.map((line, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: lines is a static literal that never reorders
         <Fragment key={i}>
           {line}
           {i < lines.length - 1 ? "\n" : null}

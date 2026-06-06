@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { listThemes, getTheme, editSlot, undoEdit, saveDraft, discardDraft, type ThemeListing, type ThemeState, type AppState } from "./api";
+import {
+  listThemes,
+  getTheme,
+  editSlot,
+  undoEdit,
+  saveDraft,
+  discardDraft,
+  type ThemeListing,
+  type ThemeState,
+  type AppState,
+} from "./api";
 import type { SlotRole } from "./lib/slot-discovery";
 import { parseFormatTokens } from "./lib/format-tokens";
 import { errMessage } from "./lib/err";
@@ -24,9 +34,12 @@ function useToast(): { toast: string | null; showToast: (msg: string, ms?: numbe
     }, ms);
   }, []);
 
-  useEffect(() => () => {
-    if (timerRef.current !== null) clearTimeout(timerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   return { toast, showToast };
 }
@@ -40,11 +53,13 @@ export default function App() {
   const { toast, showToast } = useToast();
 
   useEffect(() => {
-    listThemes().then(list => {
-      setThemes(list);
-      const initial = list.find(t => t.current) ?? list[0];
-      if (initial) setActiveName(initial.name);
-    }).catch((e: unknown) => setError(errMessage(e)));
+    listThemes()
+      .then(list => {
+        setThemes(list);
+        const initial = list.find(t => t.current) ?? list[0];
+        if (initial) setActiveName(initial.name);
+      })
+      .catch((e: unknown) => setError(errMessage(e)));
   }, []);
 
   useEffect(() => {
@@ -52,16 +67,22 @@ export default function App() {
     setError(null);
     let cancelled = false;
     getTheme(activeName)
-      .then(t => { if (!cancelled) setTheme(t); })
-      .catch((e: unknown) => { if (!cancelled) setError(errMessage(e)); });
-    return () => { cancelled = true; };
+      .then(t => {
+        if (!cancelled) setTheme(t);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(errMessage(e));
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [activeName]);
 
   async function handleEdit(slotId: string, newKey: string) {
     if (!theme) return;
     try {
       const updated = await editSlot(theme.name, slotId, newKey);
-      setTheme(prev => prev ? { ...prev, apps: [updated] } : prev);
+      setTheme(prev => (prev ? { ...prev, apps: [updated] } : prev));
     } catch (e: unknown) {
       setError(errMessage(e));
     }
@@ -84,7 +105,7 @@ export default function App() {
     if (!theme) return;
     try {
       const updated = await fn(theme.name);
-      setTheme(prev => prev ? { ...prev, apps: [updated] } : prev);
+      setTheme(prev => (prev ? { ...prev, apps: [updated] } : prev));
       showToast(successMsg);
     } catch (e: unknown) {
       setError(errMessage(e));
@@ -106,10 +127,23 @@ export default function App() {
         <ThemeSelector themes={themes} active={activeName} onChange={setActiveName} />
         <div className="header-actions">
           {currentApp?.dirty && <span className="dirty-marker">● unsaved</span>}
-          <button onClick={handleUndo} disabled={!currentApp?.canUndo}>undo</button>
-          <button onClick={handleDiscard} disabled={!currentApp?.dirty}>discard</button>
-          <button onClick={handleSave} disabled={!currentApp?.dirty} className="primary">save</button>
-          <button onClick={handleReload}>reload</button>
+          <button type="button" onClick={handleUndo} disabled={!currentApp?.canUndo}>
+            undo
+          </button>
+          <button type="button" onClick={handleDiscard} disabled={!currentApp?.dirty}>
+            discard
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!currentApp?.dirty}
+            className="primary"
+          >
+            save
+          </button>
+          <button type="button" onClick={handleReload}>
+            reload
+          </button>
         </div>
       </header>
       {error && <div className="error-banner">{error}</div>}
@@ -138,7 +172,14 @@ export default function App() {
   );
 }
 
-function AppSection({ theme, app, hover, onEdit, onSlotDisappeared, onHoverSlot }: {
+function AppSection({
+  theme,
+  app,
+  hover,
+  onEdit,
+  onSlotDisappeared,
+  onHoverSlot,
+}: {
   theme: ThemeState;
   app: AppState;
   hover: HoverSlot;

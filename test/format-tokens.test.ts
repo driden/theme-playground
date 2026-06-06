@@ -3,6 +3,7 @@ import { parseFormatTokens } from "../src/lib/format-tokens";
 
 describe("parseFormatTokens", () => {
   test("triple-quoted format with transitions and modules", () => {
+    // biome-ignore format: one-line-per-element mirrors the multiline format intent
     const text = [
       `format = """`,
       `[](fg:color1)\\`,
@@ -33,6 +34,7 @@ describe("parseFormatTokens", () => {
     ]);
   });
 
+  // biome-ignore lint/suspicious/noTemplateCurlyInString: ${env_var} / ${USER} are literals describing starship's brace syntax, not real template expressions
   test("braced ${env_var} module references", () => {
     const text = `format = "\${USER}$os"\n`;
     expect(parseFormatTokens(text)).toEqual([
@@ -54,15 +56,14 @@ describe("parseFormatTokens", () => {
   });
 
   test("strips #-prefixed comment lines inside format body", () => {
+    // biome-ignore format: one-line-per-element mirrors the multiline format intent
     const text = [
       `format = """`,
       `#$python\\`,
       `$os\\`,
       `"""`,
     ].join("\n");
-    expect(parseFormatTokens(text)).toEqual([
-      { type: "module", name: "os" },
-    ]);
+    expect(parseFormatTokens(text)).toEqual([{ type: "module", name: "os" }]);
   });
 
   test("captures transition between modules: ](style)", () => {

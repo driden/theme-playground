@@ -23,7 +23,13 @@ function rgbToHex(triple: string): string | null {
     if (!Number.isFinite(n) || n < 0 || n > 255) return null;
     nums.push(n);
   }
-  return "#" + nums.map(n => n.toString(16).padStart(2, "0")).join("").toUpperCase();
+  return (
+    "#" +
+    nums
+      .map(n => n.toString(16).padStart(2, "0"))
+      .join("")
+      .toUpperCase()
+  );
 }
 
 function hexAttr(style: string, re: RegExp, attrName: string): string | null {
@@ -64,6 +70,7 @@ export function PromptPreview({ ansi, highlight }: Props) {
   return (
     <>
       {highlightCss && <style>{highlightCss}</style>}
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: rendering ansi_up's HTML output, which sanitizes its input */}
       <pre className="prompt-preview" dangerouslySetInnerHTML={{ __html: html }} />
     </>
   );

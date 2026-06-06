@@ -13,7 +13,8 @@ export function ThemeSelector({ themes, active, onChange }: Props) {
       <select value={active ?? ""} onChange={e => onChange(e.target.value)}>
         {themes.map(t => (
           <option key={t.name} value={t.name}>
-            {t.name}{t.current ? " (current)" : ""}
+            {t.name}
+            {t.current ? " (current)" : ""}
           </option>
         ))}
       </select>
