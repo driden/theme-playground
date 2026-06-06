@@ -3,7 +3,14 @@ import { parseFormatTokens } from "../src/lib/format-tokens";
 
 describe("parseFormatTokens", () => {
   test("triple-quoted format with transitions and modules", () => {
-    const text = [`format = """`, `[](fg:color1)\\`, `$os\\`, `$directory\\`, `"""`].join("\n");
+    // biome-ignore format: one-line-per-element mirrors the multiline format intent
+    const text = [
+      `format = """`,
+      `[](fg:color1)\\`,
+      `$os\\`,
+      `$directory\\`,
+      `"""`,
+    ].join("\n");
     expect(parseFormatTokens(text)).toEqual([
       { type: "transition" },
       { type: "module", name: "os" },
@@ -49,7 +56,13 @@ describe("parseFormatTokens", () => {
   });
 
   test("strips #-prefixed comment lines inside format body", () => {
-    const text = [`format = """`, `#$python\\`, `$os\\`, `"""`].join("\n");
+    // biome-ignore format: one-line-per-element mirrors the multiline format intent
+    const text = [
+      `format = """`,
+      `#$python\\`,
+      `$os\\`,
+      `"""`,
+    ].join("\n");
     expect(parseFormatTokens(text)).toEqual([{ type: "module", name: "os" }]);
   });
 

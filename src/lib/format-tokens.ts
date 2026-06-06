@@ -6,13 +6,25 @@
 
 export type FormatToken = { type: "transition" } | { type: "module"; name: string };
 
-// Matches the first `format = ...` assignment with one of three string forms.
-// Capture groups 1/2/3 are the triple-quoted/double-quoted/single-quoted body.
-// Examples it matches:
-//   format = """[a]($style) $directory"""
-//   format = "$directory $git_branch"
-//   format = '[](color12)$git_branch'
-const FORMAT_RE = /^format\s*=\s*(?:"""([\s\S]*?)"""|"([^"]*)"|'([^']*)')/m;
+// Matches the first `format = ...` assignment in one of three string forms.
+// One regex per delimiter style; tried in order, first non-null wins. Each
+// regex has exactly one capture group (the body), so the call site reads as
+// a single string lookup with no group-by-group fallback.
+//   format = """[a]($style) $directory"""    → FORMAT_TRIPLE_RE
+//   format = "$directory $git_branch"        → FORMAT_DOUBLE_RE
+//   format = '[](color12)$git_branch'        → FORMAT_SINGLE_RE
+const FORMAT_TRIPLE_RE = /^format\s*=\s*"""([\s\S]*?)"""/m;
+const FORMAT_DOUBLE_RE = /^format\s*=\s*"([^"]*)"/m;
+const FORMAT_SINGLE_RE = /^format\s*=\s*'([^']*)'/m;
+const FORMAT_BODY_RES = [FORMAT_TRIPLE_RE, FORMAT_DOUBLE_RE, FORMAT_SINGLE_RE];
+
+function extractFormatBody(fileRaw: string): string {
+  for (const re of FORMAT_BODY_RES) {
+    const match = fileRaw.match(re);
+    if (match) return match[1] ?? "";
+  }
+  return "";
+}
 
 // Strips lines that begin (with optional leading whitespace) with `#`. Starship
 // format strings often contain `#$c\` lines authors leave as scratch comments;
@@ -28,10 +40,7 @@ const COMMENT_LINE_RE = /^[ \t]*#[^\n]*/gm;
 const TOKEN_RE = /\]\([^)]*\)|\$\{?([A-Za-z_]\w*)/g;
 
 export function parseFormatTokens(fileRaw: string): FormatToken[] {
-  const formatMatch = fileRaw.match(FORMAT_RE);
-  const content = (
-    formatMatch ? (formatMatch[1] ?? formatMatch[2] ?? formatMatch[3] ?? "") : ""
-  ).replace(COMMENT_LINE_RE, "");
+  const content = extractFormatBody(fileRaw).replace(COMMENT_LINE_RE, "");
   const tokens: FormatToken[] = [];
   for (const match of content.matchAll(TOKEN_RE)) {
     if (match[0].startsWith("](")) tokens.push({ type: "transition" });

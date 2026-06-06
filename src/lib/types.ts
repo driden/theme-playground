@@ -37,25 +37,34 @@ const SEMANTIC_ROLES = [
 ] as const;
 export type SemanticRole = (typeof SEMANTIC_ROLES)[number];
 
-// X11 / legacy palette slots — positional, no semantic meaning. These live in
-// each app's own config (e.g. starship.toml's [palettes.theme] table), NOT in
-// the theme-level colors.toml. So they're not part of `Palette` below.
+// X11 / legacy palette slots — positional, no semantic meaning. Optional in
+// `Palette`: a theme may populate them, but the canonical home for ANSI hexes
+// is each app's own config (e.g. starship.toml's [palettes.theme] table).
 export type AnsiRole =
   `color${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15}`;
+const ANSI_ROLES: readonly AnsiRole[] = Array.from(
+  { length: 16 },
+  (_, i) => `color${i}` as AnsiRole,
+);
 
 export type PaletteRole = SemanticRole | AnsiRole;
 
 const SEMANTIC_ROLE_SET = new Set<string>(SEMANTIC_ROLES);
+const ANSI_ROLE_SET = new Set<string>(ANSI_ROLES);
 export const isSemanticRole = (s: string): s is SemanticRole => SEMANTIC_ROLE_SET.has(s);
+export const isAnsiRole = (s: string): s is AnsiRole => ANSI_ROLE_SET.has(s);
+export const isPaletteRole = (s: string): s is PaletteRole => isSemanticRole(s) || isAnsiRole(s);
 
-// The colors.toml palette. Every semantic role must be present and a valid hex
-// color. Extra keys (including ANSI slots) are rejected at the boundary.
-export type Palette = { [K in SemanticRole]: HexColor };
-
-const paletteShape = Object.fromEntries(SEMANTIC_ROLES.map(role => [role, HexColorSchema])) as {
-  [K in SemanticRole]: typeof HexColorSchema;
+// Semantic roles required, ANSI roles optional. Extras outside PaletteRole are
+// rejected at the boundary via .strict() below.
+const paletteShape = {
+  ...Object.fromEntries(SEMANTIC_ROLES.map(role => [role, HexColorSchema])),
+  ...Object.fromEntries(ANSI_ROLES.map(role => [role, HexColorSchema.optional()])),
+} as { [K in SemanticRole]: typeof HexColorSchema } & {
+  [K in AnsiRole]: z.ZodOptional<typeof HexColorSchema>;
 };
 export const PaletteSchema = z.object(paletteShape).strict();
+export type Palette = z.infer<typeof PaletteSchema>;
 
 export const SlotRoleSchema = z.enum(["fg", "bg"]);
 export type SlotRole = z.infer<typeof SlotRoleSchema>;
