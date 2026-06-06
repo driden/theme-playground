@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isPaletteRole, type ColorSlot, type SlotRole, type Palette } from "../lib/types";
+import { isSemanticRole, type ColorSlot, type SlotRole, type Palette } from "../lib/types";
 import { assertNonNull } from "../lib/assert";
 import type { FormatToken } from "../lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
@@ -101,7 +101,9 @@ export function ColorSlotTable({
   function renderCell(slot?: ColorSlot) {
     if (!slot) return <span className="empty-cell">—</span>;
     const lowerKey = slot.key.toLowerCase();
-    const hex = (isPaletteRole(lowerKey) ? palette[lowerKey] : "#000").toUpperCase();
+    const hex = (
+      (isSemanticRole(lowerKey) ? palette[lowerKey] : undefined) ?? "#000"
+    ).toUpperCase();
     return (
       <span
         className="slot-cell"
