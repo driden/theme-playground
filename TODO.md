@@ -37,6 +37,18 @@ Other defaults worth making overridable while here:
 
 ## Architectural
 
+### Add a second app (tmux) — even as a dummy — to force the right abstractions
+Currently `"starship"` is baked into the code in dozens of places — the `AppName` union is literally `"starship"`, `originalPath` / `draftPath` use it, `buildAppState` calls `discoverSlots(..., "name-token")` directly, `slot-discovery.ts` knows starship's mini-DSL. The single-app assumption is invisible until you try to add a second one.
+
+A dummy `"tmux"` implementation (no real color rendering, just the plumbing) would surface the seams:
+- `AppName` becomes `"starship" | "tmux"` and `APPS` grows.
+- File discovery: each app declares its own filename (`starship.toml`, `tmux.conf` or `tmux-theme.toml`, etc.).
+- Slot discovery is per-app — starship's DSL parser stays in `slot-discovery.ts`; tmux gets its own (or a stub that returns `[]` for now).
+- Preview rendering is per-app — `renderStarship` becomes one of several render functions, or a strategy registered per app.
+- The frontend's `app.app === "starship"` checks (and the hardcoded `theme.apps[0]` in `App.tsx`) become loops.
+
+Even a stub tmux that returns "no preview" / "no slots" is enough to drive this. Once the seams are real, the `src/backend` split and `server.ts` decomposition (next item) fall out naturally — handlers are no longer about "the starship route" but "the slot-edit route for any app".
+
 ### Split into `src/backend/` and `src/frontend/`
 Current layout mixes concerns:
 - `server.ts` at repo root
