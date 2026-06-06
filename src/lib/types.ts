@@ -47,24 +47,24 @@ const ANSI_ROLES: readonly AnsiRole[] = Array.from(
   (_, i) => `color${i}` as AnsiRole,
 );
 
-export type PaletteRole = SemanticRole | AnsiRole;
-
 const SEMANTIC_ROLE_SET = new Set<string>(SEMANTIC_ROLES);
 const ANSI_ROLE_SET = new Set<string>(ANSI_ROLES);
 export const isSemanticRole = (s: string): s is SemanticRole => SEMANTIC_ROLE_SET.has(s);
 export const isAnsiRole = (s: string): s is AnsiRole => ANSI_ROLE_SET.has(s);
-export const isPaletteRole = (s: string): s is PaletteRole => isSemanticRole(s) || isAnsiRole(s);
+export const isPaletteRole = (s: string): s is SemanticRole | AnsiRole =>
+  isSemanticRole(s) || isAnsiRole(s);
 
-// Semantic roles required, ANSI roles optional. Extras outside PaletteRole are
-// rejected at the boundary via .strict() below.
+// The colors.toml palette: semantic roles required, ANSI roles optional.
+// Extras (any key outside SemanticRole | AnsiRole) are rejected by .strict().
+export type Palette = Record<SemanticRole, HexColor> & Partial<Record<AnsiRole, HexColor>>;
+
 const paletteShape = {
   ...Object.fromEntries(SEMANTIC_ROLES.map(role => [role, HexColorSchema])),
   ...Object.fromEntries(ANSI_ROLES.map(role => [role, HexColorSchema.optional()])),
-} as { [K in SemanticRole]: typeof HexColorSchema } & {
-  [K in AnsiRole]: z.ZodOptional<typeof HexColorSchema>;
-};
-export const PaletteSchema = z.object(paletteShape).strict();
-export type Palette = z.infer<typeof PaletteSchema>;
+} as Record<SemanticRole, typeof HexColorSchema> &
+  Record<AnsiRole, z.ZodOptional<typeof HexColorSchema>>;
+
+export const PaletteSchema: z.ZodType<Palette> = z.object(paletteShape).strict();
 
 export const SlotRoleSchema = z.enum(["fg", "bg"]);
 export type SlotRole = z.infer<typeof SlotRoleSchema>;
