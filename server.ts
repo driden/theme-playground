@@ -2,19 +2,27 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { discoverSlots, paletteKeysFromStarshipToml } from "./src/lib/slot-discovery";
+import { THEMES_DIR, listThemes, themeExists, readPalette } from "./src/lib/themes";
 import {
-  THEMES_DIR, listThemes, themeExists, readPalette,
-} from "./src/lib/themes";
-import {
-  isAppName, errMessage, SlotEditBodySchema,
-  type AppName, type AppState, type ColorSlot, type ThemeState,
+  isAppName,
+  errMessage,
+  SlotEditBodySchema,
+  type AppName,
+  type AppState,
+  type ColorSlot,
+  type ThemeState,
 } from "./src/lib/types";
 
 const REPO_ROOT = path.resolve(THEMES_DIR, "..");
 const DRAFTS_DIR = path.join(import.meta.dir, ".drafts");
 
 class HttpError extends Error {
-  constructor(public status: number, msg: string) { super(msg); }
+  constructor(
+    public status: number,
+    msg: string,
+  ) {
+    super(msg);
+  }
 }
 
 // Match a path against a regex and return its capture groups as a non-null
@@ -87,7 +95,9 @@ function assertAppName(app: string): asserts app is AppName {
 
 // ── starship subprocess ──────────────────────────────────────────────────────
 
-async function renderStarship(configPath: string): Promise<{ ansi: string | null; error: string | null }> {
+async function renderStarship(
+  configPath: string,
+): Promise<{ ansi: string | null; error: string | null }> {
   const env = {
     PATH: process.env.PATH ?? "/usr/bin:/bin",
     HOME: process.env.HOME ?? os.homedir(),
@@ -100,11 +110,14 @@ async function renderStarship(configPath: string): Promise<{ ansi: string | null
   };
   try {
     const proc = Bun.spawn(
-      ["starship", "prompt",
-       "--terminal-width=120",
-       "--status=0",
-       "--cmd-duration=1234",
-       "--jobs=0"],
+      [
+        "starship",
+        "prompt",
+        "--terminal-width=120",
+        "--status=0",
+        "--cmd-duration=1234",
+        "--jobs=0",
+      ],
       { cwd: REPO_ROOT, env, stdout: "pipe", stderr: "pipe" },
     );
     const [stdout, stderr] = await Promise.all([
@@ -182,9 +195,16 @@ const server = Bun.serve({
       }
 
       // POST /api/themes/:name/:app/(undo|save|discard) — draft actions
-      const actionCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)\/(undo|save|discard)$/);
+      const actionCaps = matchRoute(
+        pathname,
+        /^\/api\/themes\/([\w-]+)\/([\w-]+)\/(undo|save|discard)$/,
+      );
       if (req.method === "POST" && actionCaps) {
-        const [themeName, app, action] = actionCaps as [string, string, "undo" | "save" | "discard"];
+        const [themeName, app, action] = actionCaps as [
+          string,
+          string,
+          "undo" | "save" | "discard",
+        ];
         await assertThemeExists(themeName);
         assertAppName(app);
         const draft = draftPath(themeName, app);
@@ -221,11 +241,18 @@ const server = Bun.serve({
         const current = await fs.readFile(draft, "utf8");
         const palette = paletteKeysFromStarshipToml(current);
         if (!palette.has(newPaletteKey.toLowerCase())) {
-          throw new HttpError(400, `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`);
+          throw new HttpError(
+            400,
+            `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
+          );
         }
         const slots = discoverSlots(current, palette, "name-token");
         const slot = slots.find(s => s.id === slotId);
-        if (!slot) throw new HttpError(409, `slot '${slotId}' not found in current file (file may have changed)`);
+        if (!slot)
+          throw new HttpError(
+            409,
+            `slot '${slotId}' not found in current file (file may have changed)`,
+          );
 
         pushHistory(themeName, app, current);
         const next = current.slice(0, slot.start) + newPaletteKey + current.slice(slot.end);

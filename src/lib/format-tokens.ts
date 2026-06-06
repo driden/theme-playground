@@ -29,9 +29,8 @@ const TOKEN_RE = /\]\([^)]*\)|\$\{?([A-Za-z_]\w*)/g;
 
 export function parseFormatTokens(fileRaw: string): FormatToken[] {
   const formatMatch = fileRaw.match(FORMAT_RE);
-  const content = (formatMatch
-    ? (formatMatch[1] ?? formatMatch[2] ?? formatMatch[3] ?? "")
-    : ""
+  const content = (
+    formatMatch ? (formatMatch[1] ?? formatMatch[2] ?? formatMatch[3] ?? "") : ""
   ).replace(COMMENT_LINE_RE, "");
   const tokens: FormatToken[] = [];
   let match: RegExpExecArray | null;

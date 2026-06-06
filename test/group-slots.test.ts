@@ -3,7 +3,9 @@ import { groupSlots, orderByPrompt } from "../src/components/ColorSlotTable";
 import type { ColorSlot } from "../src/lib/slot-discovery";
 import type { FormatToken } from "../src/lib/format-tokens";
 
-function slot(partial: Partial<ColorSlot> & { section: string; field: string; role: "fg" | "bg"; key: string }): ColorSlot {
+function slot(
+  partial: Partial<ColorSlot> & { section: string; field: string; role: "fg" | "bg"; key: string },
+): ColorSlot {
   return {
     id: `${partial.section}/${partial.field}/${partial.role}/1@0`,
     start: 0,
@@ -47,9 +49,7 @@ describe("orderByPrompt", () => {
   });
 
   test("single section appearing in formatTokens goes to active", () => {
-    const groups = groupSlots([
-      slot({ section: "os", field: "style", role: "fg", key: "color1" }),
-    ]);
+    const groups = groupSlots([slot({ section: "os", field: "style", role: "fg", key: "color1" })]);
     const tokens: FormatToken[] = [{ type: "module", name: "os" }];
     const { active, inactive } = orderByPrompt(groups, tokens);
     expect(active.length).toBe(1);
@@ -58,9 +58,7 @@ describe("orderByPrompt", () => {
   });
 
   test("duplicate $module references dedupe (group appears once)", () => {
-    const groups = groupSlots([
-      slot({ section: "os", field: "style", role: "fg", key: "color1" }),
-    ]);
+    const groups = groupSlots([slot({ section: "os", field: "style", role: "fg", key: "color1" })]);
     const tokens: FormatToken[] = [
       { type: "module", name: "os" },
       { type: "module", name: "os" },
@@ -85,10 +83,7 @@ describe("orderByPrompt", () => {
       slot({ section: "format", field: "format (#1)", role: "fg", key: "color1" }),
       slot({ section: "format", field: "format (#2)", role: "fg", key: "color2" }),
     ]);
-    const tokens: FormatToken[] = [
-      { type: "transition" },
-      { type: "transition" },
-    ];
+    const tokens: FormatToken[] = [{ type: "transition" }, { type: "transition" }];
     const { active } = orderByPrompt(groups, tokens);
     expect(active.map(g => g.field)).toEqual(["format (#1)", "format (#2)"]);
   });

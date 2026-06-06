@@ -2,10 +2,28 @@ import { describe, expect, test } from "bun:test";
 import { discoverSlots, paletteKeysFromStarshipToml } from "../src/lib/slot-discovery";
 
 const PALETTE = new Set([
-  "accent","cursor","foreground","background",
-  "selection_foreground","selection_background",
-  "color0","color1","color2","color3","color4","color5","color6","color7",
-  "color8","color9","color10","color11","color12","color13","color14","color15",
+  "accent",
+  "cursor",
+  "foreground",
+  "background",
+  "selection_foreground",
+  "selection_background",
+  "color0",
+  "color1",
+  "color2",
+  "color3",
+  "color4",
+  "color5",
+  "color6",
+  "color7",
+  "color8",
+  "color9",
+  "color10",
+  "color11",
+  "color12",
+  "color13",
+  "color14",
+  "color15",
 ]);
 
 describe("discoverSlots (name-token mode)", () => {
@@ -14,7 +32,12 @@ describe("discoverSlots (name-token mode)", () => {
     const slots = discoverSlots(text, PALETTE, "name-token");
     expect(slots.length).toBe(2);
     expect(slots[0]).toMatchObject({ section: "os", field: "style", role: "bg", key: "color12" });
-    expect(slots[1]).toMatchObject({ section: "os", field: "style", role: "fg", key: "foreground" });
+    expect(slots[1]).toMatchObject({
+      section: "os",
+      field: "style",
+      role: "fg",
+      key: "foreground",
+    });
   });
 
   test("captures bracketed [](fg:X bg:Y) constructs", () => {
@@ -120,20 +143,14 @@ describe("discoverSlots (name-token mode)", () => {
   });
 
   test("does NOT strip comments inside triple-quoted format strings", () => {
-    const text = [
-      `format = """`,
-      `#$c\\`,
-      `[](fg:color12)\\`,
-      `"""`,
-    ].join("\n");
+    const text = [`format = """`, `#$c\\`, `[](fg:color12)\\`, `"""`].join("\n");
     const slots = discoverSlots(text, PALETTE, "name-token");
     expect(slots.length).toBe(1);
     expect(slots[0]).toMatchObject({ key: "color12" });
   });
 
   test("hex-literal mode throws (forward-compat stub)", () => {
-    expect(() => discoverSlots("anything", PALETTE, "hex-literal"))
-      .toThrow(/hex-literal/);
+    expect(() => discoverSlots("anything", PALETTE, "hex-literal")).toThrow(/hex-literal/);
   });
 
   test("tracks section context for [[array-of-tables]] headers", () => {

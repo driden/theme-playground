@@ -11,8 +11,17 @@ export type { SlotRole, SlotMode, ColorSlot } from "./types";
 
 // Lifted from starship's parse_style_string.
 const MODIFIERS = new Set([
-  "underline", "bold", "italic", "dimmed", "inverted",
-  "blink", "hidden", "strikethrough", "prev_fg", "prev_bg", "none",
+  "underline",
+  "bold",
+  "italic",
+  "dimmed",
+  "inverted",
+  "blink",
+  "hidden",
+  "strikethrough",
+  "prev_fg",
+  "prev_bg",
+  "none",
 ]);
 
 function isStyleField(name: string): boolean {
@@ -24,9 +33,7 @@ function isStyleField(name: string): boolean {
 const { Parser, Language } = TreeSitter;
 await Parser.init();
 const require = createRequire(import.meta.url);
-const wasmPath = require.resolve(
-  "@tree-sitter-grammars/tree-sitter-toml/tree-sitter-toml.wasm",
-);
+const wasmPath = require.resolve("@tree-sitter-grammars/tree-sitter-toml/tree-sitter-toml.wasm");
 const lang = await Language.load(wasmPath);
 const parser = new Parser();
 parser.setLanguage(lang);
@@ -63,8 +70,12 @@ function sectionOf(node: TreeSitter.Node): string {
 // ── stage 2: tokenize one style slice ────────────────────────────────────────
 
 function tokenizeSlice(
-  source: string, sliceStart: number, sliceEnd: number,
-  section: string, field: string, palette: Set<string>,
+  source: string,
+  sliceStart: number,
+  sliceEnd: number,
+  section: string,
+  field: string,
+  palette: Set<string>,
 ): ColorSlot[] {
   const re = /(fg:|bg:)?([A-Za-z_][A-Za-z0-9_]*)/g;
   const text = source.slice(sliceStart, sliceEnd);
@@ -79,7 +90,15 @@ function tokenizeSlice(
     const role: SlotRole = prefix === "bg:" ? "bg" : "fg";
     const start = sliceStart + m.index + (prefix ? prefix.length : 0);
     occ += 1;
-    out.push({ id: `${section}/${field}/${role}/${occ}@${start}`, section, field, role, key: name, start, end: start + name.length });
+    out.push({
+      id: `${section}/${field}/${role}/${occ}@${start}`,
+      section,
+      field,
+      role,
+      key: name,
+      start,
+      end: start + name.length,
+    });
   }
   return out;
 }
@@ -91,8 +110,12 @@ function tokenizeSlice(
 // per-field counters agree. If a future codebase splits formats across pairs,
 // reconsider.
 function bracketSlots(
-  source: string, sliceStart: number, sliceEnd: number,
-  section: string, field: string, palette: Set<string>,
+  source: string,
+  sliceStart: number,
+  sliceEnd: number,
+  section: string,
+  field: string,
+  palette: Set<string>,
 ): ColorSlot[] {
   const re = /\]\(([^)]*)\)/g;
   const text = source.slice(sliceStart, sliceEnd);
@@ -102,7 +125,16 @@ function bracketSlots(
   while ((m = re.exec(text)) !== null) {
     occ += 1;
     const innerStart = sliceStart + m.index + 2; // skip `](`
-    out.push(...tokenizeSlice(source, innerStart, innerStart + m[1]!.length, section, `${field} (#${occ})`, palette));
+    out.push(
+      ...tokenizeSlice(
+        source,
+        innerStart,
+        innerStart + m[1]!.length,
+        section,
+        `${field} (#${occ})`,
+        palette,
+      ),
+    );
   }
   return out;
 }
@@ -138,7 +170,8 @@ export function discoverSlots(text: string, palette: Set<string>, mode: SlotMode
         if (valNode?.type === "string") {
           const [cs, ce] = stringContent(valNode);
           const section = sectionOf(node);
-          if (isStyleField(keyName)) styleOut.push(...tokenizeSlice(text, cs, ce, section, keyName, palette));
+          if (isStyleField(keyName))
+            styleOut.push(...tokenizeSlice(text, cs, ce, section, keyName, palette));
           bracketOut.push(...bracketSlots(text, cs, ce, section, keyName, palette));
         }
       }

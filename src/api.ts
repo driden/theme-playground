@@ -31,7 +31,10 @@ export async function editSlot(
   return body as AppState;
 }
 
-async function postAction(themeName: string, action: "undo" | "save" | "discard"): Promise<AppState> {
+async function postAction(
+  themeName: string,
+  action: "undo" | "save" | "discard",
+): Promise<AppState> {
   const res = await fetch(`/api/themes/${themeName}/starship/${action}`, { method: "POST" });
   const body = await res.json();
   if (!res.ok) throw new Error(body.error ?? `${action} failed (${res.status})`);

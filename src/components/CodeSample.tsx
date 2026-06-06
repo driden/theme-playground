@@ -1,3 +1,6 @@
+// biome-ignore-all format: each inner array represents one visual line of the
+// rendered sample — keeping tokens packed per line is more readable than
+// one-token-per-line. Format opts out for this file only.
 import { Fragment, useMemo, type ReactNode } from "react";
 import type { Palette } from "../lib/types";
 

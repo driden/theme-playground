@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-export const HexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/).brand<"HexColor">();
+export const HexColorSchema = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/)
+  .brand<"HexColor">();
 export type HexColor = z.infer<typeof HexColorSchema>;
 
 // Semantic palette roles, established when extracting themes from neovim.
@@ -9,20 +12,39 @@ export type HexColor = z.infer<typeof HexColorSchema>;
 // name here registers it for both compile-time and runtime use.
 const SEMANTIC_ROLES = [
   // chrome
-  "background", "foreground", "cursor",
-  "selection_background", "selection_foreground", "accent",
+  "background",
+  "foreground",
+  "cursor",
+  "selection_background",
+  "selection_foreground",
+  "accent",
   // syntax
-  "comment", "keyword", "string", "function", "type",
-  "number", "variable", "constant", "operator", "property", "parameter",
+  "comment",
+  "keyword",
+  "string",
+  "function",
+  "type",
+  "number",
+  "variable",
+  "constant",
+  "operator",
+  "property",
+  "parameter",
   // diagnostics
-  "error", "warning", "info", "hint",
+  "error",
+  "warning",
+  "info",
+  "hint",
 ] as const;
 export type SemanticRole = (typeof SEMANTIC_ROLES)[number];
 
 // X11 / legacy palette slots — positional, no semantic meaning.
-export type AnsiRole = `color${0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15}`;
-const ANSI_ROLES: readonly AnsiRole[] =
-  Array.from({ length: 16 }, (_, i) => `color${i}` as AnsiRole);
+export type AnsiRole =
+  `color${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15}`;
+const ANSI_ROLES: readonly AnsiRole[] = Array.from(
+  { length: 16 },
+  (_, i) => `color${i}` as AnsiRole,
+);
 
 export type PaletteRole = SemanticRole | AnsiRole;
 
@@ -45,22 +67,21 @@ export type SlotRole = "fg" | "bg";
 export type SlotMode = "name-token" | "hex-literal";
 
 export type ColorSlot = {
-  id: string;       // stable: `${section}/${field}/${role}/${occ}@${start}`
-  section: string;  // table name; root context -> "format"
-  field: string;    // e.g. "style", "style_user", or "format (#N)" for bracketed
+  id: string; // stable: `${section}/${field}/${role}/${occ}@${start}`
+  section: string; // table name; root context -> "format"
+  field: string; // e.g. "style", "style_user", or "format (#N)" for bracketed
   role: SlotRole;
-  key: string;      // captured token, original case preserved
-  start: number;    // JS-string index of first char of key
-  end: number;      // exclusive
+  key: string; // captured token, original case preserved
+  start: number; // JS-string index of first char of key
+  end: number; // exclusive
 };
 
 export type SlotId = string & { readonly __brand: "SlotId" };
 export const asSlotId = (s: string): SlotId => s as SlotId;
 
 export const APPS = ["starship"] as const;
-export type AppName = typeof APPS[number];
-export const isAppName = (s: string): s is AppName =>
-  (APPS as readonly string[]).includes(s);
+export type AppName = (typeof APPS)[number];
+export const isAppName = (s: string): s is AppName => (APPS as readonly string[]).includes(s);
 
 export type AppState = {
   app: AppName;
@@ -85,5 +106,4 @@ export const SlotEditBodySchema = z.object({
 });
 export type SlotEditBody = z.infer<typeof SlotEditBodySchema>;
 
-export const errMessage = (e: unknown): string =>
-  e instanceof Error ? e.message : String(e);
+export const errMessage = (e: unknown): string => (e instanceof Error ? e.message : String(e));

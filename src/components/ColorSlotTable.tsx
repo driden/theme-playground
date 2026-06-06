@@ -40,7 +40,10 @@ export function groupSlots(slots: ColorSlot[]): Group[] {
 // `formatTokens`: each transition pulls the next format-section group; each
 // module reference pulls all that section's groups. Anything left over is
 // "defined but unused".
-export function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { active: Group[]; inactive: Group[] } {
+export function orderByPrompt(
+  groups: Group[],
+  formatTokens: FormatToken[],
+): { active: Group[]; inactive: Group[] } {
   const bySection = new Map<string, Group[]>();
   for (const group of groups) {
     const arr = bySection.get(group.section) ?? [];
@@ -80,7 +83,14 @@ export function orderByPrompt(groups: Group[], formatTokens: FormatToken[]): { a
   return { active, inactive };
 }
 
-export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDisappeared, onHoverSlot }: Props) {
+export function ColorSlotTable({
+  slots,
+  palette,
+  formatTokens,
+  onEdit,
+  onSlotDisappeared,
+  onHoverSlot,
+}: Props) {
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -113,7 +123,10 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
         {openSlotId === slot.id && (
           <PalettePicker
             palette={palette}
-            onPick={key => { onEdit(slot.id, key); setOpenSlotId(null); }}
+            onPick={key => {
+              onEdit(slot.id, key);
+              setOpenSlotId(null);
+            }}
             onClose={() => setOpenSlotId(null)}
           />
         )}
@@ -136,7 +149,9 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
     if (items.length === 0) return null;
     return (
       <>
-        <tr className="group-header"><td colSpan={4}>{label}</td></tr>
+        <tr className="group-header">
+          <td colSpan={4}>{label}</td>
+        </tr>
         {items.map((item, i) => renderRow(item, `${prefix}${i}`))}
       </>
     );
@@ -145,7 +160,12 @@ export function ColorSlotTable({ slots, palette, formatTokens, onEdit, onSlotDis
   return (
     <table className="slot-table">
       <thead>
-        <tr><th>Section</th><th>Field</th><th>BG</th><th>FG</th></tr>
+        <tr>
+          <th>Section</th>
+          <th>Field</th>
+          <th>BG</th>
+          <th>FG</th>
+        </tr>
       </thead>
       <tbody>
         {renderGroup("in your prompt", activeGroups, "a")}

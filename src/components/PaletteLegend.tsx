@@ -3,14 +3,26 @@ import type { Palette } from "../lib/types";
 type Props = { palette: Palette };
 
 const GROUPS: Array<{ label: string; keys: Array<keyof Palette> }> = [
-  { label: "chrome", keys: [
-    "background", "foreground", "cursor",
-    "selection_background", "selection_foreground",
-  ]},
-  { label: "syntax", keys: [
-    "comment", "keyword", "string", "function", "type",
-    "number", "variable", "constant", "operator", "property", "parameter",
-  ]},
+  {
+    label: "chrome",
+    keys: ["background", "foreground", "cursor", "selection_background", "selection_foreground"],
+  },
+  {
+    label: "syntax",
+    keys: [
+      "comment",
+      "keyword",
+      "string",
+      "function",
+      "type",
+      "number",
+      "variable",
+      "constant",
+      "operator",
+      "property",
+      "parameter",
+    ],
+  },
   { label: "diagnostics", keys: ["error", "warning", "info", "hint"] },
 ];
 
