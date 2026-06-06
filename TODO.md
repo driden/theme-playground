@@ -15,6 +15,7 @@ Deferred work identified during development. Each item is scoped small enough to
 ### Port conflicts on startup produce unhelpful failures
 Both servers run with fixed ports — backend on `5174` (`server.ts`), frontend on `5173` (Vite). When either port is already in use the process fails silently or with a raw `EADDRINUSE` error, and `bun run dev` continues because the two processes are backgrounded with `&`. Fix: probe both ports before starting (or catch `EADDRINUSE` in each process and exit with a clear message), and make the `dev` script fail fast if either child exits non-zero instead of letting the other half run alone.
 
+
 ### Missing or empty `THEMES_DIR` is unfriendly
 - When `THEMES_DIR` doesn't exist, `fs.readdir` in `src/lib/themes.ts` throws ENOENT. Server returns generic `"internal server error"` 500 with no path info; user has no diagnostic.
 - When `THEMES_DIR` exists but is empty, frontend shows a blank page with an empty dropdown — no banner, no empty-state, no clue.
