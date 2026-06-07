@@ -1,16 +1,10 @@
 /* Mirrors ghostty's font stack so the preview matches the real terminal:
    Comic Code Nerd Font Mono covers both text glyphs and Powerline/Nerd
    icons in one font (consistent metrics, no mixing). Falls back to Hack
-   Nerd Font Mono for machines without the patched font. Monaco for Apple
-   PUA glyphs. Browsers gate non-allowlisted system fonts unless declared
-   via @font-face + local(), so each is explicitly named here. */
+   Nerd Font Mono. Monaco for Apple PUA glyphs. */
 @font-face {
   font-family: "Comic Code";
-  src:
-    url("/fonts/ComicCodeNerdFontMono-Regular.otf") format("opentype"),
-    local("Comic Code Nerd Font Mono"),
-    local("Comic Code"),
-    local("ComicCode");
+  src: url("/fonts/ComicCodeNerdFontMono-Regular.otf") format("opentype");
   font-display: block;
 }
 @font-face {
