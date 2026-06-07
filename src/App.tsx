@@ -3,6 +3,7 @@ import {
   listThemes,
   getTheme,
   editSlot,
+  editSection,
   undoEdit,
   saveDraft,
   discardDraft,
@@ -15,6 +16,7 @@ import { parseFormatTokens } from "./lib/format-tokens";
 import { errMessage } from "./lib/err";
 import { PromptPreview } from "./components/PromptPreview";
 import { ColorSlotTable } from "./components/ColorSlotTable";
+import { SectionsTable } from "./components/SectionsTable";
 import { ThemeSelector } from "./components/ThemeSelector";
 import { CodeSample } from "./components/CodeSample";
 import { PaletteLegend } from "./components/PaletteLegend";
@@ -51,6 +53,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<HoverSlot>(null);
   const [font, setFont] = useState(DEFAULT_PROMPT_FONT);
+  const [sectionsMode, setSectionsMode] = useState(true);
   const { toast, showToast } = useToast();
 
   useEffect(() => {
@@ -83,6 +86,16 @@ export default function App() {
     if (!theme) return;
     try {
       const updated = await editSlot(theme.name, slotId, newKey);
+      setTheme(prev => (prev ? { ...prev, apps: [updated] } : prev));
+    } catch (e: unknown) {
+      setError(errMessage(e));
+    }
+  }
+
+  async function handleEditSection(sectionName: string, newKey: string) {
+    if (!theme) return;
+    try {
+      const updated = await editSection(theme.name, sectionName, newKey);
       setTheme(prev => (prev ? { ...prev, apps: [updated] } : prev));
     } catch (e: unknown) {
       setError(errMessage(e));
@@ -127,6 +140,24 @@ export default function App() {
       <header className="app-header">
         <ThemeSelector themes={themes} active={activeName} onChange={setActiveName} />
         <div className="header-actions">
+          {theme?.sections && (
+            <span className="mode-toggle">
+              <button
+                type="button"
+                className={sectionsMode ? "active" : ""}
+                onClick={() => setSectionsMode(true)}
+              >
+                sections
+              </button>
+              <button
+                type="button"
+                className={sectionsMode ? "" : "active"}
+                onClick={() => setSectionsMode(false)}
+              >
+                slots
+              </button>
+            </span>
+          )}
           {currentApp?.dirty && <span className="dirty-marker">● unsaved</span>}
           <button type="button" onClick={handleUndo} disabled={!currentApp?.canUndo}>
             undo
@@ -175,7 +206,9 @@ export default function App() {
           app={app}
           hover={hover}
           font={font}
+          sectionsMode={sectionsMode && theme.sections !== undefined}
           onEdit={handleEdit}
+          onEditSection={handleEditSection}
           onHoverSlot={setHover}
           onSlotDisappeared={handleSlotDisappeared}
         />
@@ -196,7 +229,9 @@ function AppSection({
   app,
   hover,
   font,
+  sectionsMode,
   onEdit,
+  onEditSection,
   onSlotDisappeared,
   onHoverSlot,
 }: {
@@ -204,7 +239,9 @@ function AppSection({
   app: AppState;
   hover: HoverSlot;
   font: string;
+  sectionsMode: boolean;
   onEdit: (id: string, k: string) => void;
+  onEditSection: (sectionName: string, newKey: string) => void;
   onSlotDisappeared: () => void;
   onHoverSlot: (h: HoverSlot) => void;
 }) {
@@ -212,14 +249,23 @@ function AppSection({
     <section className="app-section">
       <h2>{app.app}</h2>
       <PromptPreview ansi={app.preview?.data ?? null} highlight={hover} font={font} />
-      <ColorSlotTable
-        slots={app.colorSlots}
-        palette={theme.palette}
-        formatTokens={parseFormatTokens(app.fileRaw)}
-        onEdit={onEdit}
-        onSlotDisappeared={onSlotDisappeared}
-        onHoverSlot={onHoverSlot}
-      />
+      {sectionsMode && theme.sections ? (
+        <SectionsTable
+          config={theme.sections}
+          app={app}
+          palette={theme.palette}
+          onEditSection={onEditSection}
+        />
+      ) : (
+        <ColorSlotTable
+          slots={app.colorSlots}
+          palette={theme.palette}
+          formatTokens={parseFormatTokens(app.fileRaw)}
+          onEdit={onEdit}
+          onSlotDisappeared={onSlotDisappeared}
+          onHoverSlot={onHoverSlot}
+        />
+      )}
     </section>
   );
 }
