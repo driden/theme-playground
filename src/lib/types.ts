@@ -102,10 +102,27 @@ export const AppStateSchema = z.object({
 });
 export type AppState = z.infer<typeof AppStateSchema>;
 
+export const SectionEntrySchema = z.object({
+  name: z.string().min(1),
+  modules: z.array(z.string().min(1)).optional(),
+});
+export type SectionEntry = z.infer<typeof SectionEntrySchema>;
+export type SectionConfig = SectionEntry[];
+export const SectionConfigSchema = z.array(SectionEntrySchema);
+
+export const isContentSection = (e: SectionEntry): e is SectionEntry & { modules: string[] } =>
+  e.modules !== undefined && e.modules.length > 0;
+
+export const SectionEditBodySchema = z.object({
+  sectionName: z.string().min(1),
+  newPaletteKey: z.string().min(1),
+});
+
 export const ThemeStateSchema = z.object({
   name: z.string(),
   palette: PaletteSchema,
   apps: z.array(AppStateSchema),
+  sections: SectionConfigSchema.optional(),
 });
 export type ThemeState = z.infer<typeof ThemeStateSchema>;
 
