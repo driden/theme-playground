@@ -51,6 +51,19 @@ export async function editSlot(
   return parseOrThrow(res, AppStateSchema, "edit");
 }
 
+export async function editSection(
+  themeName: string,
+  sectionName: string,
+  newPaletteKey: string,
+): Promise<AppState> {
+  const res = await fetch(`/api/themes/${themeName}/starship/section`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ sectionName, newPaletteKey }),
+  });
+  return parseOrThrow(res, AppStateSchema, "editSection");
+}
+
 async function postAction(
   themeName: string,
   action: "undo" | "save" | "discard",
