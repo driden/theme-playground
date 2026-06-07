@@ -8,8 +8,7 @@ import { PaletteSchema, type Palette, type ThemeListing } from "./types";
 // (each with colors.toml + starship.toml). Defaults to ../themes for a
 // repo-local layout but the env var lets the playground run standalone
 // against any dotfiles checkout.
-export const THEMES_DIR =
-  process.env.THEMES_DIR ?? path.resolve(import.meta.dir, "../../../themes");
+export const THEMES_DIR = process.env.THEMES_DIR ?? path.resolve(import.meta.dir);
 
 async function readCurrentThemeName(): Promise<string> {
   const namePath = path.join(os.homedir(), ".config/themes/current/name");

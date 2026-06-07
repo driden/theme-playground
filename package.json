@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run dev:server & bun run dev:web",
+    "dev": "trap 'kill $(jobs -p) 2>/dev/null' EXIT; bun run dev:server & bun run dev:web; wait",
     "dev:server": "bun --hot server.ts",
     "dev:web": "vite",
     "build": "tsc --noEmit && vite build",

@@ -12,6 +12,9 @@ Deferred work identified during development. Each item is scoped small enough to
 
 ## Error UX / running the app
 
+### Port conflicts on startup produce unhelpful failures
+Both servers run with fixed ports — backend on `5174` (`server.ts`), frontend on `5173` (Vite). When either port is already in use the process fails silently or with a raw `EADDRINUSE` error, and `bun run dev` continues because the two processes are backgrounded with `&`. Fix: probe both ports before starting (or catch `EADDRINUSE` in each process and exit with a clear message), and make the `dev` script fail fast if either child exits non-zero instead of letting the other half run alone.
+
 ### Missing or empty `THEMES_DIR` is unfriendly
 - When `THEMES_DIR` doesn't exist, `fs.readdir` in `src/lib/themes.ts` throws ENOENT. Server returns generic `"internal server error"` 500 with no path info; user has no diagnostic.
 - When `THEMES_DIR` exists but is empty, frontend shows a blank page with an empty dropdown — no banner, no empty-state, no clue.
@@ -36,6 +39,9 @@ Other defaults worth making overridable while here:
 `server.ts` `renderStarship` — `Bun.spawn` runs `starship prompt` with no timeout. A hung starship (broken config, infinite recursion in a custom command) blocks the request indefinitely and the browser tab spins forever. Use `Bun.spawn`'s `timeout` option or wrap in an `AbortController` with ~5s budget.
 
 ## Architectural
+
+### Canvas-based prompt renderer
+The current `<span>`-based ANSI renderer (`PromptPreview.tsx` + `ansi_up`) has unavoidable font metric mismatches between text glyphs and Nerd Font icon glyphs at the browser rendering level. Even with a single patched font, different fonts render at different visual heights and powerline separators don't align perfectly. A canvas renderer draws each character in a fixed-size cell (like a real terminal) and is immune to these issues. Approach: parse the ANSI output into `{text, fg, bg}` segments, measure cell size once via canvas text metrics, then draw each character at a fixed grid position. The slot-highlight feature (hover a row → glow matching spans) would need to be re-implemented by tracking cell positions and their colors, which is straightforward. xterm.js does this well but is ~1MB+ and overkill; a purpose-built ~150-200 line canvas renderer is the right fit.
 
 ### Add a second app (tmux) — even as a dummy — to force the right abstractions
 Currently `"starship"` is baked into the code in dozens of places — the `AppName` union is literally `"starship"`, `originalPath` / `draftPath` use it, `buildAppState` calls `discoverSlots(..., "name-token")` directly, `slot-discovery.ts` knows starship's mini-DSL. The single-app assumption is invisible until you try to add a second one.
