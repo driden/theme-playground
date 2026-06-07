@@ -4,7 +4,7 @@
 import { Fragment, useMemo, type ReactNode } from "react";
 import type { Palette } from "../lib/types";
 
-type Props = { palette: Palette };
+type Props = { palette: Palette; font: string };
 
 // Roles the sample actually references. If any is missing the theme hasn't
 // been re-extracted under the semantic schema yet — fall back to a message.
@@ -37,7 +37,7 @@ function buildLines(palette: Palette): Line[] {
   ];
 }
 
-export function CodeSample({ palette }: Props) {
+export function CodeSample({ palette, font }: Props) {
   const missing = REQUIRED.filter(role => !palette[role]);
   const lines = useMemo(() => missing.length ? null : buildLines(palette), [palette, missing.length]);
 
@@ -52,7 +52,7 @@ export function CodeSample({ palette }: Props) {
   return (
     <pre
       className="code-sample"
-      style={{ background: palette.background, color: palette.foreground }}
+      style={{ background: palette.background, color: palette.foreground, fontFamily: font }}
     >
       {lines.map((line, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: lines is a static literal that never reorders

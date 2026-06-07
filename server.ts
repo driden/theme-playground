@@ -13,9 +13,6 @@ import {
   type ThemeState,
 } from "./src/lib/types";
 
-const REPO_ROOT = path.resolve(THEMES_DIR, "..");
-const DRAFTS_DIR = path.join(import.meta.dir, ".drafts");
-
 class HttpError extends Error {
   constructor(
     public status: number,
@@ -47,17 +44,26 @@ function matchRoute<N extends number>(
   return caps as StringTuple<N>;
 }
 
+const APP_CONFIG_FILE: Record<AppName, string> = {
+  starship: "starship.toml",
+};
+
 function originalPath(theme: string, app: AppName): string {
-  return path.join(THEMES_DIR, theme, `${app}.toml`);
+  return path.join(THEMES_DIR, theme, APP_CONFIG_FILE[app]);
 }
+
+function getDraftDir(theme: string, app: AppName): string {
+  return path.join(THEMES_DIR, theme, ".drafts", app);
+}
+
 function draftPath(theme: string, app: AppName): string {
-  return path.join(DRAFTS_DIR, `${theme}-${app}.toml`);
+  return path.join(getDraftDir(theme, app), APP_CONFIG_FILE[app]);
 }
 
 // First touch: copy original → draft. Idempotent on subsequent calls.
 async function ensureDraft(theme: string, app: AppName): Promise<string> {
-  await fs.mkdir(DRAFTS_DIR, { recursive: true });
   const draft = draftPath(theme, app);
+  await fs.mkdir(getDraftDir(theme, app), { recursive: true });
   if (!(await Bun.file(draft).exists())) {
     const original = await fs.readFile(originalPath(theme, app), "utf8");
     await fs.writeFile(draft, original);
@@ -101,17 +107,14 @@ function assertAppName(app: string): asserts app is AppName {
 }
 
 async function renderStarship(
-  configPath: string,
+  theme: string,
 ): Promise<{ ansi: string | null; error: string | null }> {
   const env = {
     PATH: process.env.PATH ?? "/usr/bin:/bin",
     HOME: process.env.HOME ?? os.homedir(),
     LANG: process.env.LANG ?? "en_US.UTF-8",
     TERM: "xterm-256color",
-    STARSHIP_CONFIG: configPath,
-    // Intentionally no STARSHIP_SHELL — setting it to zsh makes starship
-    // wrap ANSI escapes in `%{...%}` markers for zsh's prompt-length counter,
-    // which real zsh strips but our HTML preview shows literally.
+    STARSHIP_CONFIG: draftPath(theme, "starship"),
   };
   try {
     const proc = Bun.spawn(
@@ -123,7 +126,7 @@ async function renderStarship(
         "--cmd-duration=1234",
         "--jobs=0",
       ],
-      { cwd: REPO_ROOT, env, stdout: "pipe", stderr: "pipe" },
+      { cwd: path.join(THEMES_DIR, theme), env, stdout: "pipe", stderr: "pipe" },
     );
     const [stdout, stderr] = await Promise.all([
       new Response(proc.stdout).text(),
@@ -155,7 +158,7 @@ async function buildAppState(themeName: string): Promise<AppState> {
   const fileRaw = await fs.readFile(draft, "utf8");
   const palette = paletteKeysFromStarshipToml(fileRaw);
   const { colorSlots, slotError } = tryDiscoverSlots(fileRaw, palette);
-  const { ansi, error: previewError } = await renderStarship(draft);
+  const { ansi, error: previewError } = await renderStarship(themeName);
   return {
     app: "starship",
     fileRaw,

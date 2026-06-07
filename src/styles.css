@@ -1,12 +1,10 @@
 /* Mirrors ghostty's font stack so the preview matches the real terminal:
-   Comic Code for text, Hack Nerd Font Mono for Powerline/Nerd glyphs
-   (U+E000-U+E0FF range), Monaco for Apple PUA glyphs (U+F8FF). All
-   loaded from the system. Modern browsers gate non-allowlisted system
-   fonts unless they're declared via @font-face + local(), so each is
-   explicitly named here. */
+   Comic Code Nerd Font Mono covers both text glyphs and Powerline/Nerd
+   icons in one font (consistent metrics, no mixing). Falls back to Hack
+   Nerd Font Mono. Monaco for Apple PUA glyphs. */
 @font-face {
   font-family: "Comic Code";
-  src: local("Comic Code"), local("ComicCode");
+  src: url("/fonts/ComicCodeNerdFontMono-Regular.otf") format("opentype");
   font-display: block;
 }
 @font-face {
@@ -16,9 +14,6 @@
     local("HackNerdFontMono-Regular"),
     url("/fonts/HackNerdFontMono-Regular.woff2") format("woff2");
   font-display: block;
-  /* Scope to the Powerline + Nerd Font icon ranges so the browser only
-     reaches for this family when rendering those glyphs. */
-  unicode-range: U+E000-E0FF, U+F000-F8FE, U+2500-25FF;
 }
 @font-face {
   font-family: "Monaco";
@@ -58,6 +53,20 @@ header.app-header {
   gap: 8px;
 }
 
+.font-picker {
+  background: transparent;
+  border: none;
+  color: #dcd7ba;
+  font-size: 11px;
+  opacity: 0.4;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.font-picker:hover {
+  opacity: 0.8;
+}
+
 .dirty-marker {
   color: #c0a36e;
   font-size: 12px;
@@ -88,6 +97,8 @@ button.primary:disabled {
 .prompt-preview {
   font-family: "Comic Code", "Hack Nerd Font Mono", Monaco, monospace;
   font-size: 16px;
+  line-height: 1;
+  font-variant-emoji: text;
   white-space: pre;
   background: #1f1f28;
   padding: 12px 16px;

@@ -5,6 +5,7 @@ import type { SlotRole } from "../lib/slot-discovery";
 type Props = {
   ansi: string | null;
   highlight: { hex: string; role: SlotRole } | null;
+  font: string;
 };
 
 // These regexes are coupled to ansi_up's output shape: it emits spans like
@@ -48,7 +49,7 @@ function annotateSpans(html: string): string {
   });
 }
 
-export function PromptPreview({ ansi, highlight }: Props) {
+export function PromptPreview({ ansi, highlight, font }: Props) {
   const html = useMemo(() => {
     if (!ansi) return "(no preview)";
     const ansi_up = new AnsiUp();
@@ -70,8 +71,12 @@ export function PromptPreview({ ansi, highlight }: Props) {
   return (
     <>
       {highlightCss && <style>{highlightCss}</style>}
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: rendering ansi_up's HTML output, which sanitizes its input */}
-      <pre className="prompt-preview" dangerouslySetInnerHTML={{ __html: html }} />
+      <pre
+        className="prompt-preview"
+        style={{ fontFamily: font }}
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: rendering ansi_up's HTML output, which sanitizes its input
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     </>
   );
 }

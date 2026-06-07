@@ -50,6 +50,7 @@ export default function App() {
   const [theme, setTheme] = useState<ThemeState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<HoverSlot>(null);
+  const [font, setFont] = useState(DEFAULT_PROMPT_FONT);
   const { toast, showToast } = useToast();
 
   useEffect(() => {
@@ -144,6 +145,17 @@ export default function App() {
           <button type="button" onClick={handleReload}>
             reload
           </button>
+          <select
+            className="font-picker"
+            value={font}
+            onChange={event => setFont(event.target.value)}
+          >
+            {PROMPT_FONTS.map(f => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
         </div>
       </header>
       {error && <div className="error-banner">{error}</div>}
@@ -152,7 +164,7 @@ export default function App() {
           <h2>code</h2>
           <div className="code-grid">
             <PaletteLegend palette={theme.palette} />
-            <CodeSample palette={theme.palette} />
+            <CodeSample palette={theme.palette} font={font} />
           </div>
         </section>
       )}
@@ -162,6 +174,7 @@ export default function App() {
           theme={theme}
           app={app}
           hover={hover}
+          font={font}
           onEdit={handleEdit}
           onHoverSlot={setHover}
           onSlotDisappeared={handleSlotDisappeared}
@@ -172,10 +185,17 @@ export default function App() {
   );
 }
 
+const PROMPT_FONTS: { label: string; value: string }[] = [
+  { label: "Comic Code", value: '"Comic Code", monospace' },
+  { label: "Hack", value: '"Hack Nerd Font Mono", monospace' },
+];
+const DEFAULT_PROMPT_FONT = '"Comic Code", monospace';
+
 function AppSection({
   theme,
   app,
   hover,
+  font,
   onEdit,
   onSlotDisappeared,
   onHoverSlot,
@@ -183,6 +203,7 @@ function AppSection({
   theme: ThemeState;
   app: AppState;
   hover: HoverSlot;
+  font: string;
   onEdit: (id: string, k: string) => void;
   onSlotDisappeared: () => void;
   onHoverSlot: (h: HoverSlot) => void;
@@ -190,7 +211,7 @@ function AppSection({
   return (
     <section className="app-section">
       <h2>{app.app}</h2>
-      <PromptPreview ansi={app.preview?.data ?? null} highlight={hover} />
+      <PromptPreview ansi={app.preview?.data ?? null} highlight={hover} font={font} />
       <ColorSlotTable
         slots={app.colorSlots}
         palette={theme.palette}
