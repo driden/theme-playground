@@ -2,11 +2,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { discoverSlots, paletteKeysFromStarshipToml } from "./src/lib/slot-discovery";
-import { THEMES_DIR, listThemes, themeExists, readPalette } from "./src/lib/themes";
+import { THEMES_DIR, listThemes, themeExists, readPalette, readSections } from "./src/lib/themes";
+import { resolveSection } from "./src/lib/sections";
+import { parseFormatTokens } from "./src/lib/format-tokens";
 import {
   isAppName,
   errMessage,
   SlotEditBodySchema,
+  SectionEditBodySchema,
   type AppName,
   type AppState,
   type ColorSlot,
@@ -172,10 +175,15 @@ async function buildAppState(themeName: string): Promise<AppState> {
 }
 
 async function buildThemeState(themeName: string): Promise<ThemeState> {
+  const [palette, sections] = await Promise.all([
+    readPalette(themeName),
+    readSections(themeName, "starship"),
+  ]);
   return {
     name: themeName,
-    palette: await readPalette(themeName),
+    palette,
     apps: [await buildAppState(themeName)],
+    ...(sections !== null ? { sections } : {}),
   };
 }
 
@@ -229,6 +237,48 @@ const server = Bun.serve({
           await fs.writeFile(draft, originalText, "utf8");
           clearHistory(themeName, app);
         }
+        return json(await buildAppState(themeName));
+      }
+
+      // POST /api/themes/:name/:app/section — atomic section-level edit
+      const sectionCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)\/section$/, 2);
+      if (req.method === "POST" && sectionCaps) {
+        const [themeName, app] = sectionCaps;
+        await assertThemeExists(themeName);
+        assertAppName(app);
+
+        const parsed = SectionEditBodySchema.safeParse(await req.json());
+        if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
+        const { sectionName, newPaletteKey } = parsed.data;
+
+        const sections = await readSections(themeName, app);
+        if (!sections) throw new HttpError(400, "this theme has no starship.sections.json");
+
+        const draft = await ensureDraft(themeName, app);
+        const current = await fs.readFile(draft, "utf8");
+        const palette = paletteKeysFromStarshipToml(current);
+        if (!palette.has(newPaletteKey.toLowerCase())) {
+          throw new HttpError(
+            400,
+            `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
+          );
+        }
+
+        const colorSlots = discoverSlots(current, palette, "name-token");
+        const formatTokens = parseFormatTokens(current);
+        const targetSlots = resolveSection(sectionName, sections, colorSlots, formatTokens);
+        if (targetSlots.length === 0) {
+          throw new HttpError(404, `section '${sectionName}' not found or has no editable slots`);
+        }
+
+        pushHistory(themeName, app, current);
+        // Apply right-to-left so earlier byte offsets remain valid after each splice.
+        const sorted = [...targetSlots].sort((a, b) => b.start - a.start);
+        const next = sorted.reduce(
+          (acc, slot) => acc.slice(0, slot.start) + newPaletteKey + acc.slice(slot.end),
+          current,
+        );
+        await fs.writeFile(draft, next, "utf8");
         return json(await buildAppState(themeName));
       }
 
