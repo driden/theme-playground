@@ -39,6 +39,17 @@ Other defaults worth making overridable while here:
 ### Starship subprocess has no timeout
 `server.ts` `renderStarship` — `Bun.spawn` runs `starship prompt` with no timeout. A hung starship (broken config, infinite recursion in a custom command) blocks the request indefinitely and the browser tab spins forever. Use `Bun.spawn`'s `timeout` option or wrap in an `AbortController` with ~5s budget.
 
+## Navigation / UX
+
+### URL deep-linking for theme selection
+
+`App.tsx` selects the initial theme from the API (`current`-flagged or `list[0]`) and stores the active name in React state — the URL is never read or written. Switching themes is not bookmarkable; reloading forgets the selection.
+
+Fix, no router needed — two small edits to `App.tsx`:
+
+1. On mount, read `new URLSearchParams(location.search).get("theme")`. If the name exists in the fetched theme list, seed `activeName` from it; otherwise fall back to the default (`current`-flagged or `list[0]`) and ignore the stale param.
+2. Mirror every `activeName` change into the URL via `history.replaceState(null, "", "?theme=" + activeName)`. A separate `useEffect([activeName])` handles this; `ThemeSelector` and the `setActiveName` callsite are unchanged.
+
 ## Architectural
 
 ### Canvas-based prompt renderer
@@ -97,7 +108,7 @@ Proposed split:
 - `README.md` (top-level) — what the tool does in one paragraph, install + run in three lines, a screenshot, link to `docs/` for the rest. Aim for the page to be readable in 30 seconds.
 - `docs/architecture.md` — the file-by-file tour, the click round-trip, slot-discovery internals, splice-preservation guarantee, design rationale, links to upstream specs.
 - `docs/fonts.md` (or keep inline in architecture) — the Comic Code / Hack Nerd Font / Monaco fallback story.
-- `docs/extraction.md` — `nvim-theme-extractor.lua` contract (the 20 semantic roles, the chain-resolution rationale), since that file now lives in this repo.
+- `docs/extraction.md` — extraction contract (the 20 semantic roles, the chain-resolution rationale); implementation lives in `dotfiles/themes/extract.lua`.
 
 While here: README's "What's inside" tree includes paths that have since moved (`src/lib/slot-discovery.ts` is correct, but `src/api.ts` is now a thin parsed-response wrapper, not "fetch wrappers + shared types"). Sync or delete.
 
