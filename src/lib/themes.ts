@@ -2,7 +2,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import TOML from "@iarna/toml";
-import { PaletteSchema, type Palette, type ThemeListing } from "./types";
+import {
+  PaletteSchema,
+  SectionConfigSchema,
+  type Palette,
+  type ThemeListing,
+  type SectionConfig,
+  type AppName,
+} from "./types";
 
 // THEMES_DIR can be pointed at any directory containing per-theme subdirs
 // (each with colors.toml + starship.toml). Defaults to ../themes for a
@@ -35,4 +42,37 @@ export async function readPalette(themeName: string): Promise<Palette> {
   const text = await fs.readFile(path.join(THEMES_DIR, themeName, "colors.toml"), "utf8");
   const parsed = TOML.parse(text) as { palette?: unknown };
   return PaletteSchema.parse(parsed.palette ?? {});
+}
+
+// Per-app sections-config filename, parallel to the app's main config
+// (starship.toml -> starship.sections.json). Flat in the theme dir, same as
+// the source files it describes.
+const APP_SECTIONS_FILE: Record<AppName, string> = {
+  starship: "starship.sections.json",
+};
+
+// Resolves the sections config for a theme+app. Prefers the theme's own file,
+// then falls back to the shared stub in templates/ — every theme is generated
+// from templates/starship.toml.tmpl and shares one prompt structure, so a
+// single stub lights up all themes. Returns null when neither exists; if a
+// present file is malformed, warns and returns null (the explicit file wins —
+// we don't silently fall through to the template on a typo).
+export async function readSections(themeName: string, app: AppName): Promise<SectionConfig | null> {
+  const filename = APP_SECTIONS_FILE[app];
+  const candidates = [
+    path.join(THEMES_DIR, themeName, filename),
+    path.join(THEMES_DIR, "templates", filename),
+  ];
+  for (const candidate of candidates) {
+    const file = Bun.file(candidate);
+    if (!(await file.exists())) continue;
+    const raw: unknown = await file.json();
+    const result = SectionConfigSchema.safeParse(raw);
+    if (!result.success) {
+      console.warn(`${candidate} is invalid: ${result.error.message}`);
+      return null;
+    }
+    return result.data;
+  }
+  return null;
 }
