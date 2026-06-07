@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { groupSlots, orderByPrompt } from "../src/components/ColorSlotTable";
+import { groupSlots, orderByPrompt } from "../src/lib/groups";
 import type { ColorSlot } from "../src/lib/slot-discovery";
 import type { FormatToken } from "../src/lib/format-tokens";
 
