@@ -41,7 +41,7 @@ export function resolveSection(
   colorSlots: ColorSlot[],
   formatTokens: FormatToken[],
 ): ColorSlot[] {
-  const entry = config.find(e => e.name === sectionName);
+  const entry = config.find(candidate => candidate.name === sectionName);
   if (!entry) return [];
 
   if (isContentSection(entry)) {
@@ -52,8 +52,8 @@ export function resolveSection(
   }
 
   const separatorIndex = config
-    .filter(e => !isContentSection(e))
-    .findIndex(e => e.name === sectionName);
+    .filter(candidate => !isContentSection(candidate))
+    .findIndex(candidate => candidate.name === sectionName);
 
   const groups = groupSlots(colorSlots);
   const { active: orderedGroups } = orderByPrompt(groups, formatTokens);
