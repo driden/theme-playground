@@ -17,6 +17,7 @@ import { errMessage } from "./lib/err";
 import { PromptPreview } from "./components/PromptPreview";
 import { ColorSlotTable } from "./components/ColorSlotTable";
 import { SectionsTable } from "./components/SectionsTable";
+import { Toggle } from "./components/Toggle";
 import { ThemeSelector } from "./components/ThemeSelector";
 import { CodeSample } from "./components/CodeSample";
 import { PaletteLegend } from "./components/PaletteLegend";
@@ -140,24 +141,6 @@ export default function App() {
       <header className="app-header">
         <ThemeSelector themes={themes} active={activeName} onChange={setActiveName} />
         <div className="header-actions">
-          {theme?.sections && (
-            <span className="mode-toggle">
-              <button
-                type="button"
-                className={sectionsMode ? "active" : ""}
-                onClick={() => setSectionsMode(true)}
-              >
-                sections
-              </button>
-              <button
-                type="button"
-                className={sectionsMode ? "" : "active"}
-                onClick={() => setSectionsMode(false)}
-              >
-                slots
-              </button>
-            </span>
-          )}
           {currentApp?.dirty && <span className="dirty-marker">● unsaved</span>}
           <button type="button" onClick={handleUndo} disabled={!currentApp?.canUndo}>
             undo
@@ -207,6 +190,7 @@ export default function App() {
           hover={hover}
           font={font}
           sectionsMode={sectionsMode && theme.sections !== undefined}
+          onSetSectionsMode={setSectionsMode}
           onEdit={handleEdit}
           onEditSection={handleEditSection}
           onHoverSlot={setHover}
@@ -230,6 +214,7 @@ function AppSection({
   hover,
   font,
   sectionsMode,
+  onSetSectionsMode,
   onEdit,
   onEditSection,
   onSlotDisappeared,
@@ -240,6 +225,7 @@ function AppSection({
   hover: HoverSlot;
   font: string;
   sectionsMode: boolean;
+  onSetSectionsMode: (sectionsMode: boolean) => void;
   onEdit: (id: string, k: string) => void;
   onEditSection: (sectionName: string, newKey: string) => void;
   onSlotDisappeared: () => void;
@@ -247,7 +233,19 @@ function AppSection({
 }) {
   return (
     <section className="app-section">
-      <h2>{app.app}</h2>
+      <div className="app-section-head">
+        <h2>{app.app}</h2>
+        {theme.sections && (
+          <Toggle
+            options={[
+              { value: "sections", label: "sections" },
+              { value: "slots", label: "slots" },
+            ]}
+            value={sectionsMode ? "sections" : "slots"}
+            onChange={value => onSetSectionsMode(value === "sections")}
+          />
+        )}
+      </div>
       <PromptPreview ansi={app.preview?.data ?? null} highlight={hover} font={font} />
       {sectionsMode && theme.sections ? (
         <SectionsTable
