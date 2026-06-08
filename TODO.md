@@ -2,6 +2,29 @@
 
 Deferred work identified during development. Each item is scoped small enough to fit a single focused PR. Items are listed in rough priority order within each section.
 
+## Tasks
+
+1. [TOCTOU race + non-atomic writes on slot edit](#toctou-race--non-atomic-writes-on-slot-edit)
+2. [`save` doesn't clear undo history](#save-doesnt-clear-undo-history)
+3. [Port conflicts on startup produce unhelpful failures](#port-conflicts-on-startup-produce-unhelpful-failures)
+4. [Missing or empty `THEMES_DIR` is unfriendly](#missing-or-empty-themes_dir-is-unfriendly)
+5. [Starship subprocess has no timeout](#starship-subprocess-has-no-timeout)
+6. [`.env` support for runtime configuration](#env-support-for-runtime-configuration)
+7. [URL deep-linking for theme selection](#url-deep-linking-for-theme-selection)
+8. [Co-locate component styles in per-component CSS files](#co-locate-component-styles-in-per-component-css-files)
+9. [ANSI palette lookup falls back to "#000"](#ansi-palette-lookup-falls-back-to-000)
+10. [Hover highlight selects every segment sharing a color, not by palette key](#hover-highlight-selects-every-segment-sharing-a-color-not-by-palette-key)
+11. [Canvas-based prompt renderer](#canvas-based-prompt-renderer)
+12. [Add a second app (tmux) — even as a dummy — to force the right abstractions](#add-a-second-app-tmux--even-as-a-dummy--to-force-the-right-abstractions)
+13. [Split into `src/backend/` and `src/frontend/`](#split-into-srcbackend-and-srcfrontend)
+14. [`ColorSlot.field` smuggles two meanings](#colorslotfield-smuggles-two-meanings)
+15. [`tableName` sentinel collision](#tablename-sentinel-collision)
+16. [`paletteKeysFromStarshipToml` edge cases](#palettekeysfromstarshiptoml-edge-cases)
+17. [Rewrite README, move technical details to `docs/`](#rewrite-readme-move-technical-details-to-docs)
+18. [Replace one of the byte-identical golden fixtures](#replace-one-of-the-byte-identical-golden-fixtures)
+19. [HTTP smoke tests for `server.ts`](#http-smoke-tests-for-serverts)
+20. [Extract `rgbToHex` to `src/lib/color.ts`](#extract-rgbtohex-to-srclibcolorts)
+
 ## Correctness
 
 ### TOCTOU race + non-atomic writes on slot edit
@@ -14,6 +37,7 @@ Deferred work identified during development. Each item is scoped small enough to
 
 ### Port conflicts on startup produce unhelpful failures
 Both servers run with fixed ports — backend on `5174` (`server.ts`), frontend on `5173` (Vite). When either port is already in use the process fails silently or with a raw `EADDRINUSE` error, and `bun run dev` continues because the two processes are backgrounded with `&`. Fix: probe both ports before starting (or catch `EADDRINUSE` in each process and exit with a clear message), and make the `dev` script fail fast if either child exits non-zero instead of letting the other half run alone.
+
 
 ### Missing or empty `THEMES_DIR` is unfriendly
 - When `THEMES_DIR` doesn't exist, `fs.readdir` in `src/lib/themes.ts` throws ENOENT. Server returns generic `"internal server error"` 500 with no path info; user has no diagnostic.
@@ -38,7 +62,30 @@ Other defaults worth making overridable while here:
 ### Starship subprocess has no timeout
 `server.ts` `renderStarship` — `Bun.spawn` runs `starship prompt` with no timeout. A hung starship (broken config, infinite recursion in a custom command) blocks the request indefinitely and the browser tab spins forever. Use `Bun.spawn`'s `timeout` option or wrap in an `AbortController` with ~5s budget.
 
+## Navigation / UX
+
+### URL deep-linking for theme selection
+
+`App.tsx` selects the initial theme from the API (`current`-flagged or `list[0]`) and stores the active name in React state — the URL is never read or written. Switching themes is not bookmarkable; reloading forgets the selection.
+
+Fix, no router needed — two small edits to `App.tsx`:
+
+1. On mount, read `new URLSearchParams(location.search).get("theme")`. If the name exists in the fetched theme list, seed `activeName` from it; otherwise fall back to the default (`current`-flagged or `list[0]`) and ignore the stale param.
+2. Mirror every `activeName` change into the URL via `history.replaceState(null, "", "?theme=" + activeName)`. A separate `useEffect([activeName])` handles this; `ThemeSelector` and the `setActiveName` callsite are unchanged.
+
+### Hover highlight selects every segment sharing a color, not by palette key
+`PromptPreview.tsx` builds a CSS rule `span[data-fg|data-bg="<hex>"]` from the hovered slot's resolved hex, so it outlines *every* rendered prompt segment with that color. Because one palette key (e.g. `property`) is reused across many modules, and distinct keys collapse to the same hex in these themes (`keyword`/`hint` → `#AAAAFF`, `property`/`info` → `#70C2BE`), hovering one slot row lights up many unrelated segments. It reads as the tool "changing incorrect slots", though the edit itself is correct — clicking a slot splices exactly that slot's byte range (verified).
+
+Desired: highlight by the originating palette key + role, so colliding keys stop co-highlighting. A key genuinely reused across modules still highlights all its occurrences — acceptable.
+
+Constraint: colliding keys are pixel-identical in the normal render, so a span's source key can't be read back from a single normal render — only its resolved color survives.
+
+Approach (probe render): render starship once with a *sentinel palette* where every theme key gets a unique color (`keyword`→`#000001`, `hint`→`#000002`, …). The format string is unchanged, so span structure is identical. The client decodes each span's sentinel color back to its key, recolors the span to the real hex for display, and tags it `data-fg-key` / `data-bg-key`; the highlight rule then keys off `data-*-key`. Spans whose color isn't a theme-palette key (literal hex, defaults) stay untagged and unhighlighted. Cross-ref: the canvas-based prompt renderer would re-implement slot highlighting via tracked cell positions and could supersede this — if that lands first, do highlighting there instead.
+
 ## Architectural
+
+### Co-locate component styles in per-component CSS files
+All styling lives in a single `src/styles.css` (~330 lines) imported once in `main.tsx`; there are zero component-scoped stylesheets. As components grow, finding the rules for one (e.g. `.toggle` in `Toggle.tsx`) means scanning the global file. Vite supports per-component CSS imports out of the box. Move each component's rules into a co-located file (`Toggle.css` next to `Toggle.tsx`, imported by it) and shrink `styles.css` to genuinely global/shared rules (resets, layout, palette tokens). Do it as one deliberate pass, not piecemeal, so the convention is consistent.
 
 ### Canvas-based prompt renderer
 The current `<span>`-based ANSI renderer (`PromptPreview.tsx` + `ansi_up`) has unavoidable font metric mismatches between text glyphs and Nerd Font icon glyphs at the browser rendering level. Even with a single patched font, different fonts render at different visual heights and powerline separators don't align perfectly. A canvas renderer draws each character in a fixed-size cell (like a real terminal) and is immune to these issues. Approach: parse the ANSI output into `{text, fg, bg}` segments, measure cell size once via canvas text metrics, then draw each character at a fixed grid position. The slot-highlight feature (hover a row → glow matching spans) would need to be re-implemented by tracking cell positions and their colors, which is straightforward. xterm.js does this well but is ~1MB+ and overkill; a purpose-built ~150-200 line canvas renderer is the right fit.
@@ -96,7 +143,7 @@ Proposed split:
 - `README.md` (top-level) — what the tool does in one paragraph, install + run in three lines, a screenshot, link to `docs/` for the rest. Aim for the page to be readable in 30 seconds.
 - `docs/architecture.md` — the file-by-file tour, the click round-trip, slot-discovery internals, splice-preservation guarantee, design rationale, links to upstream specs.
 - `docs/fonts.md` (or keep inline in architecture) — the Comic Code / Hack Nerd Font / Monaco fallback story.
-- `docs/extraction.md` — `nvim-theme-extractor.lua` contract (the 20 semantic roles, the chain-resolution rationale), since that file now lives in this repo.
+- `docs/extraction.md` — extraction contract (the 20 semantic roles, the chain-resolution rationale); implementation lives in `dotfiles/themes/extract.lua`.
 
 While here: README's "What's inside" tree includes paths that have since moved (`src/lib/slot-discovery.ts` is correct, but `src/api.ts` is now a thin parsed-response wrapper, not "fetch wrappers + shared types"). Sync or delete.
 

@@ -256,6 +256,11 @@ button.primary:disabled {
 
 .picker-popover {
   position: absolute;
+  /* Fixed width so the flex swatches wrap into a 4-column grid regardless of
+     where the popover is anchored — in sections mode the swatch sits far right
+     with little room, so shrink-to-fit would otherwise collapse it to a single
+     column. 4 * 24px swatches + 3 * 4px gaps + 8px padding + 1px border. */
+  width: 126px;
   background: #1f1f28;
   border: 1px solid #2a2a36;
   border-radius: 4px;
@@ -282,4 +287,39 @@ button.primary:disabled {
   border-radius: 4px;
   margin-bottom: 12px;
   font-size: 13px;
+}
+
+.app-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.app-section-head h2 {
+  margin: 0;
+}
+
+.toggle {
+  display: inline-flex;
+  gap: 2px;
+  background: #0d0d0d;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.toggle button {
+  padding: 2px 10px;
+  border-radius: 3px;
+  background: transparent;
+  color: #4a4a55;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.toggle button.active {
+  background: #1f1f28;
+  color: #dcd7ba;
 }
