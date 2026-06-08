@@ -1,34 +1,59 @@
 import { groupSlots, orderByPrompt, type Group } from "./groups";
-import { isContentSection, type SectionConfig, type ColorSlot } from "./types";
+import type { SectionConfig, ColorSlot } from "./types";
 import type { FormatToken } from "./format-tokens";
 
-// Collects consecutive runs of format-section groups that appear after the
-// first content-section group. Each run corresponds (in order) to a separator
-// entry in the config.
-export function buildSeparatorRuns(orderedGroups: Group[], config: SectionConfig): Group[][] {
-  const allModules = new Set(
-    config.flatMap(entry => (isContentSection(entry) ? entry.modules : [])),
-  );
-  const runs: Group[][] = [];
-  let currentRun: Group[] | null = null;
-  let seenFirstContent = false;
+export type SectionStripe = { name: string; color: string | null; slots: ColorSlot[] };
+
+type Stripe = { color: string | null; slots: ColorSlot[] };
+
+// A powerline prompt renders as a chain of colored stripes. Each content module
+// contributes its background as a stripe; between two modules the transition
+// glyphs introduce an intermediate stripe (a separator). Crucially every
+// transition glyph spans two stripes — its fg is the stripe to its left, its bg
+// the stripe to its right — so one stripe's color appears on a module background
+// AND on the bordering glyph edges (the os color paints the leading arrow, the
+// os segment, and the arrow leaving it). Walking the prompt in order and cutting
+// a new stripe at each transition bg reconstructs the chain; the stripes line up
+// 1:1, in order, with the config's section entries.
+function buildStripes(orderedGroups: Group[]): Stripe[] {
+  let current: Stripe = { color: null, slots: [] };
+  const stripes: Stripe[] = [current];
 
   for (const group of orderedGroups) {
-    if (allModules.has(group.section)) {
-      seenFirstContent = true;
-      currentRun = null;
-    } else if (group.section === "format" && seenFirstContent) {
-      if (currentRun === null) {
-        currentRun = [];
-        runs.push(currentRun);
+    if (group.section === "format") {
+      if (group.fg) {
+        current.color ??= group.fg.key;
+        current.slots.push(group.fg);
       }
-      currentRun.push(group);
-    } else {
-      currentRun = null;
+      if (group.bg) {
+        current = { color: group.bg.key, slots: [group.bg] };
+        stripes.push(current);
+      }
+    } else if (group.bg) {
+      // A module's visible background continues the current stripe; any other bg
+      // it carries (e.g. a `style` bg the format string paints over) won't match
+      // the chain color and is left alone.
+      current.color ??= group.bg.key;
+      if (group.bg.key === current.color) current.slots.push(group.bg);
     }
   }
 
-  return runs;
+  return stripes;
+}
+
+// Maps the config's section entries, in order, onto the prompt's stripe chain.
+export function sectionStripes(
+  config: SectionConfig,
+  colorSlots: ColorSlot[],
+  formatTokens: FormatToken[],
+): SectionStripe[] {
+  const groups = groupSlots(colorSlots);
+  const { active } = orderByPrompt(groups, formatTokens);
+  const stripes = buildStripes(active);
+  return config.map((entry, i) => {
+    const stripe = stripes[i];
+    return { name: entry.name, color: stripe?.color ?? null, slots: stripe?.slots ?? [] };
+  });
 }
 
 export function resolveSection(
@@ -37,27 +62,8 @@ export function resolveSection(
   colorSlots: ColorSlot[],
   formatTokens: FormatToken[],
 ): ColorSlot[] {
-  const entry = config.find(candidate => candidate.name === sectionName);
-  if (!entry) return [];
-
-  if (isContentSection(entry)) {
-    // A module's visible background is whatever bg its format string actually
-    // paints: the inner `[...](bg:…)` bracket when it has one (e.g. git_branch),
-    // otherwise its `style` bg. Target every bg slot in the module so the whole
-    // segment moves to one color — editing only `style` leaves the inner bracket
-    // (the bg that's actually rendered) untouched.
-    return colorSlots.filter(slot => entry.modules.includes(slot.section) && slot.role === "bg");
-  }
-
-  const separatorIndex = config
-    .filter(candidate => !isContentSection(candidate))
-    .findIndex(candidate => candidate.name === sectionName);
-
-  const groups = groupSlots(colorSlots);
-  const { active: orderedGroups } = orderByPrompt(groups, formatTokens);
-  const runs = buildSeparatorRuns(orderedGroups, config);
-  const run = runs[separatorIndex];
-  if (!run) return [];
-
-  return run.flatMap(group => (group.fg ? [group.fg] : []));
+  const stripe = sectionStripes(config, colorSlots, formatTokens).find(
+    candidate => candidate.name === sectionName,
+  );
+  return stripe?.slots ?? [];
 }

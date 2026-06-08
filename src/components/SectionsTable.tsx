@@ -6,8 +6,7 @@ import {
   type SectionConfig,
   type AppState,
 } from "../lib/types";
-import { groupSlots, orderByPrompt } from "../lib/groups";
-import { buildSeparatorRuns } from "../lib/sections";
+import { sectionStripes } from "../lib/sections";
 import { parseFormatTokens } from "../lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
 
@@ -21,36 +20,14 @@ type Props = {
 export function SectionsTable({ config, app, palette, onEditSection }: Props) {
   const [openSection, setOpenSection] = useState<string | null>(null);
 
-  const separatorRuns = useMemo(() => {
-    const groups = groupSlots(app.colorSlots);
-    const tokens = parseFormatTokens(app.fileRaw);
-    const { active } = orderByPrompt(groups, tokens);
-    return buildSeparatorRuns(active, config);
-  }, [app.colorSlots, app.fileRaw, config]);
+  const stripes = useMemo(
+    () => sectionStripes(config, app.colorSlots, parseFormatTokens(app.fileRaw)),
+    [config, app.colorSlots, app.fileRaw],
+  );
 
-  function sectionColor(sectionName: string): string | null {
-    const entry = config.find(candidate => candidate.name === sectionName);
-    if (!entry) return null;
-
-    if (isContentSection(entry)) {
-      const moduleBgs = app.colorSlots.filter(
-        candidate => entry.modules.includes(candidate.section) && candidate.role === "bg",
-      );
-      // Show the bg that's actually rendered: the inner format bracket when the
-      // module has one, otherwise its style bg.
-      const slot =
-        moduleBgs.find(candidate => candidate.field.startsWith("format")) ?? moduleBgs[0];
-      if (!slot) return null;
-      const lower = slot.key.toLowerCase();
-      return (isPaletteRole(lower) ? palette[lower] : undefined) ?? null;
-    }
-
-    const sepIndex = config
-      .filter(candidate => !isContentSection(candidate))
-      .findIndex(candidate => candidate.name === sectionName);
-    const firstSlot = separatorRuns[sepIndex]?.[0]?.fg;
-    if (!firstSlot) return null;
-    const lower = firstSlot.key.toLowerCase();
+  function hexOf(role: string | null): string | null {
+    if (role === null) return null;
+    const lower = role.toLowerCase();
     return (isPaletteRole(lower) ? palette[lower] : undefined) ?? null;
   }
 
@@ -63,9 +40,9 @@ export function SectionsTable({ config, app, palette, onEditSection }: Props) {
         </tr>
       </thead>
       <tbody>
-        {config.map(entry => {
+        {config.map((entry, i) => {
           const isSep = !isContentSection(entry);
-          const hex = sectionColor(entry.name);
+          const hex = hexOf(stripes[i]?.color ?? null);
           return (
             <tr key={entry.name} className={isSep ? "separator-row" : "content-row"}>
               <td>{isSep ? `↳ ${entry.name}` : entry.name}</td>
