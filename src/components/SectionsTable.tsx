@@ -1,11 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  isPaletteRole,
-  isContentSection,
-  type Palette,
-  type SectionConfig,
-  type AppState,
-} from "../lib/types";
+import { isPaletteRole, type Palette, type SectionConfig, type AppState } from "../lib/types";
 import { sectionStripes } from "../lib/sections";
 import { parseFormatTokens } from "../lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
@@ -41,11 +35,10 @@ export function SectionsTable({ config, app, palette, onEditSection }: Props) {
       </thead>
       <tbody>
         {config.map((entry, i) => {
-          const isSep = !isContentSection(entry);
           const hex = hexOf(stripes[i]?.color ?? null);
           return (
-            <tr key={entry.name} className={isSep ? "separator-row" : "content-row"}>
-              <td>{isSep ? `↳ ${entry.name}` : entry.name}</td>
+            <tr key={entry.name}>
+              <td>{entry.name}</td>
               <td>
                 {hex !== null ? (
                   <span className="slot-cell">

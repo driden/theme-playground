@@ -323,8 +323,3 @@ button.primary:disabled {
   background: #1f1f28;
   color: #dcd7ba;
 }
-
-.sections-table .separator-row td {
-  color: #4a4a55;
-  padding-left: 1.5em;
-}
