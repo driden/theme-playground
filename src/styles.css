@@ -256,6 +256,11 @@ button.primary:disabled {
 
 .picker-popover {
   position: absolute;
+  /* Fixed width so the flex swatches wrap into a 4-column grid regardless of
+     where the popover is anchored — in sections mode the swatch sits far right
+     with little room, so shrink-to-fit would otherwise collapse it to a single
+     column. 4 * 24px swatches + 3 * 4px gaps + 8px padding + 1px border. */
+  width: 126px;
   background: #1f1f28;
   border: 1px solid #2a2a36;
   border-radius: 4px;
