@@ -240,6 +240,8 @@ const server = Bun.serve({
         return json(await buildAppState(themeName));
       }
 
+      // TODO: extract this matchRoute/if-chain dispatch into a dedicated router
+      // module so the handler isn't one long sequence of regex matches.
       // POST /api/themes/:name/:app/section — atomic section-level edit
       const sectionCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)\/section$/, 2);
       if (req.method === "POST" && sectionCaps) {
