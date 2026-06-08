@@ -2,10 +2,6 @@ import { groupSlots, orderByPrompt, type Group } from "./groups";
 import { isContentSection, type SectionConfig, type ColorSlot } from "./types";
 import type { FormatToken } from "./format-tokens";
 
-export function isStyleField(field: string): boolean {
-  return field === "style" || field.endsWith("_style") || field.startsWith("style_");
-}
-
 // Collects consecutive runs of format-section groups that appear after the
 // first content-section group. Each run corresponds (in order) to a separator
 // entry in the config.
@@ -45,10 +41,12 @@ export function resolveSection(
   if (!entry) return [];
 
   if (isContentSection(entry)) {
-    return colorSlots.filter(
-      slot =>
-        entry.modules.includes(slot.section) && slot.role === "bg" && isStyleField(slot.field),
-    );
+    // A module's visible background is whatever bg its format string actually
+    // paints: the inner `[...](bg:…)` bracket when it has one (e.g. git_branch),
+    // otherwise its `style` bg. Target every bg slot in the module so the whole
+    // segment moves to one color — editing only `style` leaves the inner bracket
+    // (the bg that's actually rendered) untouched.
+    return colorSlots.filter(slot => entry.modules.includes(slot.section) && slot.role === "bg");
   }
 
   const separatorIndex = config

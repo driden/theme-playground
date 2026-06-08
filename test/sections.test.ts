@@ -107,4 +107,21 @@ describe("resolveSection", () => {
     const result = resolveSection("branch", config, slots, tokens);
     expect(result.every(s => s.role === "bg")).toBe(true);
   });
+
+  test("content section also owns the inner format-bracket bg (the visible one)", () => {
+    // git_branch paints its visible background via an inner `[...](bg:number)`
+    // bracket nested inside `$style` (bg:property); editing the section must
+    // move both so the rendered segment actually changes color.
+    const cfg = [{ name: "branch", modules: ["git_branch"] }];
+    const branchSlots: ColorSlot[] = [
+      makeSlot("git_branch", "style", "bg", "property", 0),
+      makeSlot("git_branch", "format (#1)", "fg", "background", 10),
+      makeSlot("git_branch", "format (#1)", "bg", "number", 20),
+    ];
+    const result = resolveSection("branch", cfg, branchSlots, []);
+    expect(result.map(slot => `${slot.field}/${slot.role}=${slot.key}`).sort()).toEqual([
+      "format (#1)/bg=number",
+      "style/bg=property",
+    ]);
+  });
 });

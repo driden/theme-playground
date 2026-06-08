@@ -7,7 +7,7 @@ import {
   type AppState,
 } from "../lib/types";
 import { groupSlots, orderByPrompt } from "../lib/groups";
-import { buildSeparatorRuns, isStyleField } from "../lib/sections";
+import { buildSeparatorRuns } from "../lib/sections";
 import { parseFormatTokens } from "../lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
 
@@ -33,12 +33,13 @@ export function SectionsTable({ config, app, palette, onEditSection }: Props) {
     if (!entry) return null;
 
     if (isContentSection(entry)) {
-      const slot = app.colorSlots.find(
-        candidate =>
-          entry.modules.includes(candidate.section) &&
-          candidate.role === "bg" &&
-          isStyleField(candidate.field),
+      const moduleBgs = app.colorSlots.filter(
+        candidate => entry.modules.includes(candidate.section) && candidate.role === "bg",
       );
+      // Show the bg that's actually rendered: the inner format bracket when the
+      // module has one, otherwise its style bg.
+      const slot =
+        moduleBgs.find(candidate => candidate.field.startsWith("format")) ?? moduleBgs[0];
       if (!slot) return null;
       const lower = slot.key.toLowerCase();
       return (isPaletteRole(lower) ? palette[lower] : undefined) ?? null;
