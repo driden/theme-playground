@@ -194,137 +194,138 @@ function json(value: unknown, status = 200): Response {
   });
 }
 
-const server = Bun.serve({
-  port: 5174,
-  async fetch(req) {
-    const url = new URL(req.url);
-    const pathname = url.pathname;
-    try {
-      if (req.method === "GET" && pathname === "/api/themes") {
-        return json(await listThemes());
-      }
-
-      const themeCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)$/, 1);
-      if (req.method === "GET" && themeCaps) {
-        const [themeName] = themeCaps;
-        await assertThemeExists(themeName);
-        return json(await buildThemeState(themeName));
-      }
-
-      // POST /api/themes/:name/:app/(undo|save|discard) — draft actions
-      const actionCaps = matchRoute(
-        pathname,
-        /^\/api\/themes\/([\w-]+)\/([\w-]+)\/(undo|save|discard)$/,
-        3,
-      );
-      if (req.method === "POST" && actionCaps) {
-        const [themeName, app, action] = actionCaps;
-        await assertThemeExists(themeName);
-        assertAppName(app);
-        const draft = draftPath(themeName, app);
-        const original = originalPath(themeName, app);
-
-        if (action === "undo") {
-          const prev = popHistory(themeName, app);
-          if (prev === null) throw new HttpError(400, "nothing to undo");
-          await fs.writeFile(draft, prev, "utf8");
-        } else if (action === "save") {
-          await ensureDraft(themeName, app);
-          const draftText = await fs.readFile(draft, "utf8");
-          await fs.writeFile(original, draftText, "utf8");
-        } else if (action === "discard") {
-          const originalText = await fs.readFile(original, "utf8");
-          await fs.writeFile(draft, originalText, "utf8");
-          clearHistory(themeName, app);
-        }
-        return json(await buildAppState(themeName));
-      }
-
-      // TODO: extract this matchRoute/if-chain dispatch into a dedicated router
-      // module so the handler isn't one long sequence of regex matches.
-      // POST /api/themes/:name/:app/section — atomic section-level edit
-      const sectionCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)\/section$/, 2);
-      if (req.method === "POST" && sectionCaps) {
-        const [themeName, app] = sectionCaps;
-        await assertThemeExists(themeName);
-        assertAppName(app);
-
-        const parsed = SectionEditBodySchema.safeParse(await req.json());
-        if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
-        const { sectionName, newPaletteKey } = parsed.data;
-
-        const sections = await readSections(themeName, app);
-        if (!sections) throw new HttpError(400, "this theme has no starship.sections.json");
-
-        const draft = await ensureDraft(themeName, app);
-        const current = await fs.readFile(draft, "utf8");
-        const palette = paletteKeysFromStarshipToml(current);
-        if (!palette.has(newPaletteKey.toLowerCase())) {
-          throw new HttpError(
-            400,
-            `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
-          );
-        }
-
-        const colorSlots = discoverSlots(current, palette, "name-token");
-        const formatTokens = parseFormatTokens(current);
-        const targetSlots = resolveSection(sectionName, sections, colorSlots, formatTokens);
-        if (targetSlots.length === 0) {
-          throw new HttpError(404, `section '${sectionName}' not found or has no editable slots`);
-        }
-
-        pushHistory(themeName, app, current);
-        // Apply right-to-left so earlier byte offsets remain valid after each splice.
-        const sorted = [...targetSlots].sort((a, b) => b.start - a.start);
-        const next = sorted.reduce(
-          (acc, slot) => acc.slice(0, slot.start) + newPaletteKey + acc.slice(slot.end),
-          current,
-        );
-        await fs.writeFile(draft, next, "utf8");
-        return json(await buildAppState(themeName));
-      }
-
-      // POST /api/themes/:name/:app — slot edit (writes to draft)
-      const editCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)$/, 2);
-      if (req.method === "POST" && editCaps) {
-        const [themeName, app] = editCaps;
-        await assertThemeExists(themeName);
-        assertAppName(app);
-
-        const parsed = SlotEditBodySchema.safeParse(await req.json());
-        if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
-        const { slotId, newPaletteKey } = parsed.data;
-
-        const draft = await ensureDraft(themeName, app);
-        const current = await fs.readFile(draft, "utf8");
-        const palette = paletteKeysFromStarshipToml(current);
-        if (!palette.has(newPaletteKey.toLowerCase())) {
-          throw new HttpError(
-            400,
-            `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
-          );
-        }
-        const slots = discoverSlots(current, palette, "name-token");
-        const slot = slots.find(s => s.id === slotId);
-        if (!slot)
-          throw new HttpError(
-            409,
-            `slot '${slotId}' not found in current file (file may have changed)`,
-          );
-
-        pushHistory(themeName, app, current);
-        const next = current.slice(0, slot.start) + newPaletteKey + current.slice(slot.end);
-        await fs.writeFile(draft, next, "utf8");
-        return json(await buildAppState(themeName));
-      }
-
-      return json({ error: "not found" }, 404);
-    } catch (e: unknown) {
-      if (e instanceof HttpError) return json({ error: e.message }, e.status);
-      console.error(e);
-      return json({ error: "internal server error" }, 500);
+export async function handleRequest(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const pathname = url.pathname;
+  try {
+    if (req.method === "GET" && pathname === "/api/themes") {
+      return json(await listThemes());
     }
-  },
-});
 
-console.log(`theme-playground server listening on http://localhost:${server.port}`);
+    const themeCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)$/, 1);
+    if (req.method === "GET" && themeCaps) {
+      const [themeName] = themeCaps;
+      await assertThemeExists(themeName);
+      return json(await buildThemeState(themeName));
+    }
+
+    // POST /api/themes/:name/:app/(undo|save|discard) — draft actions
+    const actionCaps = matchRoute(
+      pathname,
+      /^\/api\/themes\/([\w-]+)\/([\w-]+)\/(undo|save|discard)$/,
+      3,
+    );
+    if (req.method === "POST" && actionCaps) {
+      const [themeName, app, action] = actionCaps;
+      await assertThemeExists(themeName);
+      assertAppName(app);
+      const draft = draftPath(themeName, app);
+      const original = originalPath(themeName, app);
+
+      if (action === "undo") {
+        const prev = popHistory(themeName, app);
+        if (prev === null) throw new HttpError(400, "nothing to undo");
+        await fs.writeFile(draft, prev, "utf8");
+      } else if (action === "save") {
+        await ensureDraft(themeName, app);
+        const draftText = await fs.readFile(draft, "utf8");
+        await fs.writeFile(original, draftText, "utf8");
+        clearHistory(themeName, app);
+      } else if (action === "discard") {
+        const originalText = await fs.readFile(original, "utf8");
+        await fs.writeFile(draft, originalText, "utf8");
+        clearHistory(themeName, app);
+      }
+      return json(await buildAppState(themeName));
+    }
+
+    // TODO: extract this matchRoute/if-chain dispatch into a dedicated router
+    // module so the handler isn't one long sequence of regex matches.
+    // POST /api/themes/:name/:app/section — atomic section-level edit
+    const sectionCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)\/section$/, 2);
+    if (req.method === "POST" && sectionCaps) {
+      const [themeName, app] = sectionCaps;
+      await assertThemeExists(themeName);
+      assertAppName(app);
+
+      const parsed = SectionEditBodySchema.safeParse(await req.json());
+      if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
+      const { sectionName, newPaletteKey } = parsed.data;
+
+      const sections = await readSections(themeName, app);
+      if (!sections) throw new HttpError(400, "this theme has no starship.sections.json");
+
+      const draft = await ensureDraft(themeName, app);
+      const current = await fs.readFile(draft, "utf8");
+      const palette = paletteKeysFromStarshipToml(current);
+      if (!palette.has(newPaletteKey.toLowerCase())) {
+        throw new HttpError(
+          400,
+          `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
+        );
+      }
+
+      const colorSlots = discoverSlots(current, palette, "name-token");
+      const formatTokens = parseFormatTokens(current);
+      const targetSlots = resolveSection(sectionName, sections, colorSlots, formatTokens);
+      if (targetSlots.length === 0) {
+        throw new HttpError(404, `section '${sectionName}' not found or has no editable slots`);
+      }
+
+      pushHistory(themeName, app, current);
+      // Apply right-to-left so earlier byte offsets remain valid after each splice.
+      const sorted = [...targetSlots].sort((a, b) => b.start - a.start);
+      const next = sorted.reduce(
+        (acc, slot) => acc.slice(0, slot.start) + newPaletteKey + acc.slice(slot.end),
+        current,
+      );
+      await fs.writeFile(draft, next, "utf8");
+      return json(await buildAppState(themeName));
+    }
+
+    // POST /api/themes/:name/:app — slot edit (writes to draft)
+    const editCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)$/, 2);
+    if (req.method === "POST" && editCaps) {
+      const [themeName, app] = editCaps;
+      await assertThemeExists(themeName);
+      assertAppName(app);
+
+      const parsed = SlotEditBodySchema.safeParse(await req.json());
+      if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
+      const { slotId, newPaletteKey } = parsed.data;
+
+      const draft = await ensureDraft(themeName, app);
+      const current = await fs.readFile(draft, "utf8");
+      const palette = paletteKeysFromStarshipToml(current);
+      if (!palette.has(newPaletteKey.toLowerCase())) {
+        throw new HttpError(
+          400,
+          `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
+        );
+      }
+      const slots = discoverSlots(current, palette, "name-token");
+      const slot = slots.find(s => s.id === slotId);
+      if (!slot)
+        throw new HttpError(
+          409,
+          `slot '${slotId}' not found in current file (file may have changed)`,
+        );
+
+      pushHistory(themeName, app, current);
+      const next = current.slice(0, slot.start) + newPaletteKey + current.slice(slot.end);
+      await fs.writeFile(draft, next, "utf8");
+      return json(await buildAppState(themeName));
+    }
+
+    return json({ error: "not found" }, 404);
+  } catch (e: unknown) {
+    if (e instanceof HttpError) return json({ error: e.message }, e.status);
+    console.error(e);
+    return json({ error: "internal server error" }, 500);
+  }
+}
+
+if (import.meta.main) {
+  const server = Bun.serve({ port: 5174, fetch: handleRequest });
+  console.log(`theme-playground server listening on http://localhost:${server.port}`);
+}
