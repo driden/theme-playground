@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
-import { resolveSection, sectionStripes } from "../src/lib/sections";
-import type { ColorSlot } from "../src/lib/types";
-import type { FormatToken } from "../src/lib/format-tokens";
+import { resolveSection, sectionStripes } from "../src/sections";
+import type { ColorSlot } from "../src/types";
+import type { FormatToken } from "../src/format-tokens";
 
 function makeSlot(
   section: string,

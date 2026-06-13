@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseFormatTokens } from "../src/lib/format-tokens";
+import { parseFormatTokens } from "../src/format-tokens";
 
 describe("parseFormatTokens", () => {
   test("triple-quoted format with transitions and modules", () => {

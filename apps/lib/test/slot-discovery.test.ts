@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { discoverSlots, paletteKeysFromStarshipToml } from "../src/lib/slot-discovery";
-import { assertNonNull } from "../src/lib/assert";
+import { discoverSlots, paletteKeysFromStarshipToml } from "../src/slot-discovery";
+import { assertNonNull } from "../src/assert";
 
 const PALETTE = new Set([
   "accent",

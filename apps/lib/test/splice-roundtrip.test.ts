@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
-import { discoverSlots, paletteKeysFromStarshipToml } from "../src/lib/slot-discovery";
+import { discoverSlots, paletteKeysFromStarshipToml } from "../src/slot-discovery";
 
 describe("slot splice byte-roundtrip", () => {
   const tomlPath = path.join(__dirname, "fixtures", "themes", "bamboo", "starship.toml");

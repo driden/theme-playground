@@ -1,0 +1,5 @@
+apps/ui/package.json
+- add "@playground/lib": "workspace:*" → run bun install to link
+
+apps/ui/tsconfig.json
+- extends base, add lib: [...DOM], types: ["bun","react"], paths, include

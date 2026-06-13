@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { groupSlots, orderByPrompt } from "../src/lib/groups";
-import type { ColorSlot } from "../src/lib/slot-discovery";
-import type { FormatToken } from "../src/lib/format-tokens";
+import { groupSlots, orderByPrompt } from "../src/groups";
+import type { ColorSlot } from "../src/slot-discovery";
+import type { FormatToken } from "../src/format-tokens";
 
 function slot(
   partial: Partial<ColorSlot> & { section: string; field: string; role: "fg" | "bg"; key: string },
