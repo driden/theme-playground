@@ -1,11 +1,14 @@
 {
-  "name": "lib",
-  "module": "index.ts",
+  "name": "@playground/lib",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
-  }
+  },
+  "exports": {
+     "./*": "./src/*.ts",
+  },
+  "private": true
 }
