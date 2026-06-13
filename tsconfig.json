@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
+    "module": "Preserve",
+    "target": "ESNext",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "module": "Preserve",
-    "moduleResolution": "bundler",
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
@@ -12,7 +13,6 @@
     "noUnusedParameters": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "strict": true,
-    "target": "ESNext"
+    "strict": true
   }
 }
