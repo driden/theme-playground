@@ -12,5 +12,8 @@
   "scripts": {
     "build": "tsc --noEmit",
     "check": "bun run build && bun test"
+  },
+  "exports": {
+     "./*": "./src/*.ts",
   }
 }

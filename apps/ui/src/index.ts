@@ -7,13 +7,13 @@ const server = serve({
     "/*": index,
 
     "/api/hello": {
-      async GET(req) {
+      async GET(_) {
         return Response.json({
           message: "Hello, world!",
           method: "GET",
         });
       },
-      async PUT(req) {
+      async PUT(_) {
         return Response.json({
           message: "Hello, world!",
           method: "PUT",

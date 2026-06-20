@@ -16,7 +16,6 @@ import {
   type ThemeState,
   SlotEditBody,
 } from "@playground/lib/types";
-import { assertNonNull } from "@playground/lib/assert";
 
 class HttpError extends Error {
   constructor(
