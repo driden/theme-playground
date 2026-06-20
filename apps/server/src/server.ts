@@ -2,7 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { discoverSlots, paletteKeysFromStarshipToml } from "@playground/lib/slot-discovery";
-import { THEMES_DIR, listThemes, themeExists, readPalette, readSections } from "@playground/lib/themes";
+import {
+  THEMES_DIR,
+  listThemes,
+  themeExists,
+  readPalette,
+  readSections,
+} from "@playground/lib/themes";
 import { resolveSection } from "@playground/lib/sections";
 import { parseFormatTokens } from "@playground/lib/format-tokens";
 import {
@@ -14,7 +20,7 @@ import {
   type AppState,
   type ColorSlot,
   type ThemeState,
-  SlotEditBody,
+  type SlotEditBody,
 } from "@playground/lib/types";
 
 class HttpError extends Error {
@@ -196,78 +202,92 @@ function json(value: unknown, status = 200): Response {
 }
 
 export async function handleUndo(themeName: string, app: AppName, draft: string) {
-        const prev = popHistory(themeName, app);
-        if (prev === null) throw new HttpError(400, "nothing to undo");
-        await fs.writeFile(draft, prev, "utf8");
+  const prev = popHistory(themeName, app);
+  if (prev === null) throw new HttpError(400, "nothing to undo");
+  await fs.writeFile(draft, prev, "utf8");
 }
 
 export async function handleSave(themeName: string, app: AppName, draft: string, original: string) {
-        await ensureDraft(themeName, app);
-        const draftText = await fs.readFile(draft, "utf8");
-        await fs.writeFile(original, draftText, "utf8");
-        clearHistory(themeName, app);
+  await ensureDraft(themeName, app);
+  const draftText = await fs.readFile(draft, "utf8");
+  await fs.writeFile(original, draftText, "utf8");
+  clearHistory(themeName, app);
 }
 
-export async function handleDiscard(themeName: string, app: AppName, draft: string, original: string) {
-        const originalText = await fs.readFile(original, "utf8");
-        await fs.writeFile(draft, originalText, "utf8");
-        clearHistory(themeName, app);
+export async function handleDiscard(
+  themeName: string,
+  app: AppName,
+  draft: string,
+  original: string,
+) {
+  const originalText = await fs.readFile(original, "utf8");
+  await fs.writeFile(draft, originalText, "utf8");
+  clearHistory(themeName, app);
 }
 
 export async function handleGetTheme(themeName: string) {
-      await assertThemeExists(themeName);
-      return buildThemeState(themeName);
+  await assertThemeExists(themeName);
+  return buildThemeState(themeName);
 }
 
 export async function handleAction(themeName: string, app: string, action: string) {
-      await assertThemeExists(themeName);
-      assertAppName(app);
-      const draft = draftPath(themeName, app);
-      const original = originalPath(themeName, app);
+  await assertThemeExists(themeName);
+  assertAppName(app);
+  const draft = draftPath(themeName, app);
+  const original = originalPath(themeName, app);
 
-      switch(action) {
-          case "undo": handleUndo(themeName,app,draft);
-              break;
-          case "save": handleSave(themeName,app,draft,original);
-              break;
-          case "discard": handleDiscard(themeName,app,draft,original);
-              break;
-      }
+  switch (action) {
+    case "undo":
+      handleUndo(themeName, app, draft);
+      break;
+    case "save":
+      handleSave(themeName, app, draft, original);
+      break;
+    case "discard":
+      handleDiscard(themeName, app, draft, original);
+      break;
+  }
 
-      return buildAppState(themeName);
+  return buildAppState(themeName);
 }
 
-type PaletteError = { cause: string, user: boolean }
+type PaletteError = { cause: string; user: boolean };
 
 // TODO: We need a proper result/error lib here
-export function isPaletteError(obj: object): obj is PaletteError { 
-    if ((obj as PaletteError).cause ?? null != null) { 
-        return true;
-    }
-    return false;
+export function isPaletteError(obj: object): obj is PaletteError {
+  if ((obj as PaletteError).cause != null) {
+    return true;
+  }
+  return false;
 }
 
-export async function handleSlotEdit(themeName: string, app: AppName, req: SlotEditBody): Promise<AppState | PaletteError> { 
-      const { slotId, newPaletteKey } = req;
-      const draft = await ensureDraft(themeName, app);
-      const current = await fs.readFile(draft, "utf8");
-      const palette = paletteKeysFromStarshipToml(current);
-      if (!palette.has(newPaletteKey.toLowerCase())) {
-          return { user: true, cause :  `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?` };
-      }
-      const slots = discoverSlots(current, palette, "name-token");
-      const slot = slots.find(s => s.id === slotId);
-      if (!slot)
-        return {
-            user: false,
-            cause: `slot '${slotId}' not found in current file (file may have changed)`,
-        }
+export async function handleSlotEdit(
+  themeName: string,
+  app: AppName,
+  req: SlotEditBody,
+): Promise<AppState | PaletteError> {
+  const { slotId, newPaletteKey } = req;
+  const draft = await ensureDraft(themeName, app);
+  const current = await fs.readFile(draft, "utf8");
+  const palette = paletteKeysFromStarshipToml(current);
+  if (!palette.has(newPaletteKey.toLowerCase())) {
+    return {
+      user: true,
+      cause: `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
+    };
+  }
+  const slots = discoverSlots(current, palette, "name-token");
+  const slot = slots.find(s => s.id === slotId);
+  if (!slot)
+    return {
+      user: false,
+      cause: `slot '${slotId}' not found in current file (file may have changed)`,
+    };
 
-      pushHistory(themeName, app, current);
-      const next = current.slice(0, slot.start) + newPaletteKey + current.slice(slot.end);
-      await fs.writeFile(draft, next, "utf8");
-      return buildAppState(themeName);
-
+  pushHistory(themeName, app, current);
+  const next = current.slice(0, slot.start) + newPaletteKey + current.slice(slot.end);
+  await fs.writeFile(draft, next, "utf8");
+  return buildAppState(themeName);
 }
 
 export async function handleRequest(req: Request): Promise<Response> {
@@ -349,10 +369,10 @@ export async function handleRequest(req: Request): Promise<Response> {
       const parsed = SlotEditBodySchema.safeParse(await req.json());
       if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
 
-      const result = await handleSlotEdit(themeName, app, parsed.data)
+      const result = await handleSlotEdit(themeName, app, parsed.data);
 
       if (isPaletteError(result)) {
-          return json({ error: result.cause }, result.user ? 400 : 409);
+        return json({ error: result.cause }, result.user ? 400 : 409);
       }
 
       return json(result);
@@ -365,4 +385,3 @@ export async function handleRequest(req: Request): Promise<Response> {
     return json({ error: "internal server error" }, 500);
   }
 }
-

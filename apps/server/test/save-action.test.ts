@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { handleAction, handleSlotEdit } from "../src/server";
-import { AppState } from "@playground/lib/types";
+import type { AppState } from "@playground/lib/types";
 
 // server.ts reads THEMES_DIR at import time and binds a port unless run as the
 // main module, so the env must be set before the dynamic import below.
@@ -21,13 +21,16 @@ afterAll(async () => {
 });
 
 test("save clears undo history so undo is no longer available", async () => {
-  const editResponse  = await handleSlotEdit("bamboo", "starship", { slotId: "os/style/bg/1@799", newPaletteKey: "string" } )
-  expect(editResponse).toHaveProperty("app")
+  const editResponse = await handleSlotEdit("bamboo", "starship", {
+    slotId: "os/style/bg/1@799",
+    newPaletteKey: "string",
+  });
+  expect(editResponse).toHaveProperty("app");
   const appState = editResponse as AppState;
   expect(appState.dirty).toBeTrue();
   expect(appState.canUndo).toBeTrue();
 
-  const saveResponse = await handleAction("bamboo", "starship", "save")
+  const saveResponse = await handleAction("bamboo", "starship", "save");
   const afterSave = saveResponse as AppState;
   expect(afterSave.dirty).toBe(false);
   expect(afterSave.canUndo).toBe(false);
