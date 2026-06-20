@@ -1,0 +1,30 @@
+{
+  "name": "@playground/server",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "@playground/lib": "workspace:*",
+    "@tree-sitter-grammars/tree-sitter-toml": "^0.7.0",
+    "web-tree-sitter": "^0.26.9",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@types/bun": "latest",
+    "typescript": "^6.0.3"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && bun build index.ts --outdir dist --target=bun && cp node_modules/web-tree-sitter/web-tree-sitter.wasm dist",
+    "check": "biome check && bun test",
+    "dev": "bun --watch index.ts",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "lint:fix": "biome lint --write .",
+    "check:fix": "biome check --write ."
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  }
+}

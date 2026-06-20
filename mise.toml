@@ -1,0 +1,11 @@
+[settings]
+env_shell_expand = true
+
+[shell_alias]
+dev = "mise run dev"
+
+[tasks.dev]
+description = "Runs the app (server + ui)"
+env = { THEMES_DIR = '$HOME/code/dotfiles/themes' }
+run = "./run.sh"
+

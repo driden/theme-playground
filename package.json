@@ -1,36 +1,7 @@
 {
   "name": "theme-playground",
   "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "trap 'kill $(jobs -p) 2>/dev/null' EXIT; bun run dev:server & bun run dev:web; wait",
-    "dev:server": "bun --hot server.ts",
-    "dev:web": "vite",
-    "build": "tsc --noEmit && vite build",
-    "test": "bun test",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint --write .",
-    "check": "biome check .",
-    "check:fix": "biome check --write ."
-  },
-  "dependencies": {
-    "@iarna/toml": "^2.2.5",
-    "@tree-sitter-grammars/tree-sitter-toml": "^0.7.0",
-    "ansi_up": "^6.0.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "web-tree-sitter": "^0.26.9",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
-    "bun-types": "latest",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.11"
-  }
+  "workspaces": [
+    "apps/*"
+  ]
 }

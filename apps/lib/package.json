@@ -1,0 +1,22 @@
+{
+  "name": "@playground/lib",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit",
+    "check": "bun run build && bun test"
+  },
+  "peerDependencies": {
+    "@playground/lib": "workspace:*",
+    "@iarna/toml": "^2.2.5",
+    "typescript": "^6.0.3",
+    "web-tree-sitter": "^0.26.9",
+    "zod": "^4.4.3"
+  }
+}

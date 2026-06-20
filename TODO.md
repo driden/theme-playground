@@ -1,29 +1,27 @@
 # TODO
-
 Deferred work identified during development. Each item is scoped small enough to fit a single focused PR. Items are listed in rough priority order within each section.
 
 ## Tasks
-
-1. [TOCTOU race + non-atomic writes on slot edit](#toctou-race--non-atomic-writes-on-slot-edit)
-2. [`save` doesn't clear undo history](#save-doesnt-clear-undo-history)
-3. [Port conflicts on startup produce unhelpful failures](#port-conflicts-on-startup-produce-unhelpful-failures)
-4. [Missing or empty `THEMES_DIR` is unfriendly](#missing-or-empty-themes_dir-is-unfriendly)
-5. [Starship subprocess has no timeout](#starship-subprocess-has-no-timeout)
-6. [`.env` support for runtime configuration](#env-support-for-runtime-configuration)
-7. [URL deep-linking for theme selection](#url-deep-linking-for-theme-selection)
-8. [Co-locate component styles in per-component CSS files](#co-locate-component-styles-in-per-component-css-files)
-9. [ANSI palette lookup falls back to "#000"](#ansi-palette-lookup-falls-back-to-000)
-10. [Hover highlight selects every segment sharing a color, not by palette key](#hover-highlight-selects-every-segment-sharing-a-color-not-by-palette-key)
-11. [Canvas-based prompt renderer](#canvas-based-prompt-renderer)
-12. [Add a second app (tmux) — even as a dummy — to force the right abstractions](#add-a-second-app-tmux--even-as-a-dummy--to-force-the-right-abstractions)
-13. [Split into `src/backend/` and `src/frontend/`](#split-into-srcbackend-and-srcfrontend)
-14. [`ColorSlot.field` smuggles two meanings](#colorslotfield-smuggles-two-meanings)
-15. [`tableName` sentinel collision](#tablename-sentinel-collision)
-16. [`paletteKeysFromStarshipToml` edge cases](#palettekeysfromstarshiptoml-edge-cases)
-17. [Rewrite README, move technical details to `docs/`](#rewrite-readme-move-technical-details-to-docs)
-18. [Replace one of the byte-identical golden fixtures](#replace-one-of-the-byte-identical-golden-fixtures)
-19. [HTTP smoke tests for `server.ts`](#http-smoke-tests-for-serverts)
-20. [Extract `rgbToHex` to `src/lib/color.ts`](#extract-rgbtohex-to-srclibcolorts)
+- [ ] [TOCTOU race + non-atomic writes on slot edit](#toctou-race--non-atomic-writes-on-slot-edit)
+- [x] [`save` doesn't clear undo history](#save-doesnt-clear-undo-history)
+- [ ] [Port conflicts on startup produce unhelpful failures](#port-conflicts-on-startup-produce-unhelpful-failures)
+- [ ] [Missing or empty `THEMES_DIR` is unfriendly](#missing-or-empty-themes_dir-is-unfriendly)
+- [ ] [Starship subprocess has no timeout](#starship-subprocess-has-no-timeout)
+- [ ] [`.env` support for runtime configuration](#env-support-for-runtime-configuration)
+- [ ] [URL deep-linking for theme selection](#url-deep-linking-for-theme-selection)
+- [ ] [Co-locate component styles in per-component CSS files](#co-locate-component-styles-in-per-component-css-files)
+- [ ] [ANSI palette lookup falls back to "#000"](#ansi-palette-lookup-falls-back-to-000)
+- [ ] [Hover highlight selects every segment sharing a color, not by palette key](#hover-highlight-selects-every-segment-sharing-a-color-not-by-palette-key)
+- [ ] [Canvas-based prompt renderer](#canvas-based-prompt-renderer)
+- [ ] [Add a second app (tmux) — even as a dummy — to force the right abstractions](#add-a-second-app-tmux--even-as-a-dummy--to-force-the-right-abstractions)
+- [ ] [Split into `src/backend/` and `src/frontend/`](#split-into-srcbackend-and-srcfrontend)
+- [ ] [`ColorSlot.field` smuggles two meanings](#colorslotfield-smuggles-two-meanings)
+- [ ] [`tableName` sentinel collision](#tablename-sentinel-collision)
+- [ ] [`paletteKeysFromStarshipToml` edge cases](#palettekeysfromstarshiptoml-edge-cases)
+- [ ] [Rewrite README, move technical details to `docs/`](#rewrite-readme-move-technical-details-to-docs)
+- [ ] [Replace one of the byte-identical golden fixtures](#replace-one-of-the-byte-identical-golden-fixtures)
+- [ ] [HTTP smoke tests for `server.ts`](#http-smoke-tests-for-serverts)
+- [ ] [Extract `rgbToHex` to `src/lib/color.ts`](#extract-rgbtohex-to-srclibcolorts)
 
 ## Correctness
 
