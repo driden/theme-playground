@@ -1,0 +1,16 @@
+{
+  "name": "@playground/server",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@playground/lib": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "check": "bun run build && bun test"
+  }
+}
