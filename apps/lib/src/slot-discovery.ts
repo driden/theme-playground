@@ -8,8 +8,6 @@ import { createRequire } from "node:module";
 import { assertNonNull } from "./assert";
 import type { SlotRole, SlotMode, ColorSlot } from "./types";
 
-export type { SlotRole, SlotMode, ColorSlot } from "./types";
-
 // Lifted from starship's parse_style_string.
 const MODIFIERS = new Set([
   "underline",

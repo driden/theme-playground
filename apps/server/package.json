@@ -18,6 +18,7 @@
   "scripts": {
     "build": "tsc --noEmit && bun build index.ts --outdir dist --target=bun && cp node_modules/web-tree-sitter/web-tree-sitter.wasm dist",
     "check": "biome check && bun test",
+    "dev": "bun --watch index.ts",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "lint:fix": "biome lint --write .",

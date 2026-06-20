@@ -1,0 +1,4 @@
+[tasks.dev]
+description = "Runs the app (server + ui)"
+run = "./run.sh"
+
