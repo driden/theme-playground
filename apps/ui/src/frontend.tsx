@@ -13,9 +13,9 @@ import { assertNonNull } from "@playground/lib/assert";
 const elem = document.getElementById("root");
 assertNonNull(elem);
 const app = (
-    <StrictMode>
-        <App />
-    </StrictMode>
+  <StrictMode>
+    <App />
+  </StrictMode>
 );
 
 // https://bun.com/docs/bundler/hot-reloading#import-meta-hot-data
