@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { discoverSlots, paletteKeysFromStarshipToml } from "@playground/lib/slot-discovery";
+import { discoverSlots, paletteKeysFromStarshipToml } from "./slot-discovery";
 import {
   THEMES_DIR,
   listThemes,

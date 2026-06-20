@@ -2,11 +2,10 @@
 // Uses tree-sitter-toml for TOML structure; hand-rolled code only for
 // the starship DSL (style tokenizer + [label](style) extractor).
 // top-level await initialises the parser once at module load.
-
 import * as TreeSitter from "web-tree-sitter";
 import { createRequire } from "node:module";
-import { assertNonNull } from "./assert";
-import type { SlotRole, SlotMode, ColorSlot } from "./types";
+import { assertNonNull } from "@playground/lib/assert";
+import { type ColorSlot, type SlotRole, type SlotMode } from "@playground/lib/types";
 
 // Lifted from starship's parse_style_string.
 const MODIFIERS = new Set([

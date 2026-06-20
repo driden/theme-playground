@@ -3,25 +3,35 @@ set -euo pipefail
 
 PIDS=()
 
+kill_tree() {
+    local pid="$1"
+    local sig="$2"
+    local children
+    children=$(pgrep -P "$pid" 2>/dev/null || true)
+    for child in $children; do
+        kill_tree "$child" "$sig"
+    done
+    kill "-$sig" "$pid" 2>/dev/null || true
+}
+
 cleanup() {
     echo "Shutting down..."
 
     # Send SIGTERM to each process group (catches child processes too)
     for pid in "${PIDS[@]}"; do
-        kill -TERM "-$pid" 2>/dev/null
+        kill_tree "$pid" TERM
     done
 
     sleep 1
 
-    # Force kill anything still alive
     for pid in "${PIDS[@]}"; do
-        if kill -0 "$pid" 2>/dev/null; then
-            echo "Force killing PID $pid"
-            kill -KILL "-$pid" 2>/dev/null
+        children=$(pgrep -P "$pid" 2>/dev/null || true)
+        if kill -0 "$pid" 2>/dev/null || [ -n "$children" ]; then
+            echo "Force killing remnants of PID $pid"
+            kill_tree "$pid" KILL
         fi
     done
 
-    echo "Done."
     exit 0
 }
 

@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import { discoverSlots, paletteKeysFromStarshipToml } from "../src/slot-discovery";
-import { assertNonNull } from "../src/assert";
 
 const PALETTE = new Set([
   "accent",
@@ -166,6 +165,7 @@ describe("discoverSlots (name-token mode)", () => {
 
 import fs from "node:fs";
 import path from "node:path";
+import { assertNonNull } from "@playground/lib/assert";
 
 describe("slot discovery — golden fixtures", () => {
   // Self-contained: theme starship.toml inputs live in test/fixtures/themes/
