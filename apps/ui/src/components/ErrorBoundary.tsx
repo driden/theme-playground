@@ -5,13 +5,13 @@ type Props = { children: React.ReactNode };
 type State = { error: Error | null };
 
 export class ErrorBoundary extends React.Component<Props, State> {
-    state: State = { error: null };
+    override state: State = { error: null };
 
     static getDerivedStateFromError(error: Error): State {
         return { error };
     }
 
-    componentDidCatch(error: Error, info: React.ErrorInfo): void {
+    override componentDidCatch(error: Error, info: React.ErrorInfo): void {
         console.error("ErrorBoundary caught:", error, info);
     }
 
@@ -19,7 +19,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         window.location.reload();
     };
 
-    render() {
+    override render() {
         if (this.state.error) {
             return (
                 <div className="error-boundary">

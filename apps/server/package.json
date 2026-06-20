@@ -4,16 +4,22 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "@playground/lib": "workspace:*"
+    "@iarna/toml": "^2.2.5",
+    "@playground/lib": "workspace:*",
+    "@tree-sitter-grammars/tree-sitter-toml": "^0.7.0",
+    "web-tree-sitter": "^0.26.9",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@biomejs/biome": "^2.4.16",
+    "@types/bun": "latest",
+    "typescript": "^6.0.3"
   },
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "tsc --noEmit && bun build index.ts",
     "check": "bun run build && bun test"
   },
   "exports": {
-     "./*": "./src/*.ts",
+    "./*": "./src/*.ts"
   }
 }

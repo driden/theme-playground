@@ -13,6 +13,10 @@
     "check": "bun run build && bun test"
   },
   "peerDependencies": {
-    "typescript": "^6.0.3"
+    "@playground/lib": "workspace:*",
+    "@iarna/toml": "^2.2.5",
+    "typescript": "^6.0.3",
+    "web-tree-sitter": "^0.26.9",
+    "zod": "^4.4.3"
   }
 }

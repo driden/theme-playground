@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { isPaletteRole, type Palette, type SectionConfig, type AppState } from "../lib/types";
 import { sectionStripes } from "@playground/lib/sections";
 import { parseFormatTokens } from "@playground/lib/format-tokens";
 import { PalettePicker } from "./PalettePicker";
+import { AppState, isPaletteRole, Palette, SectionConfig } from "@playground/lib/types";
 
 type Props = {
     config: SectionConfig;
