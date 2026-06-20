@@ -16,8 +16,12 @@
     "typescript": "^6.0.3"
   },
   "scripts": {
-    "build": "tsc --noEmit && bun build index.ts",
-    "check": "bun run build && bun test"
+    "build": "tsc --noEmit && bun build index.ts --outdir dist --target=bun && cp node_modules/web-tree-sitter/web-tree-sitter.wasm dist",
+    "check": "biome check && bun test",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "lint:fix": "biome lint --write .",
+    "check:fix": "biome check --write ."
   },
   "exports": {
     "./*": "./src/*.ts"

@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/index.ts",
     "build": "tsc --noEmit && vite build",
-    "start": "NODE_ENV=production bun src/index.ts"
+    "check": "biome check .",
+    "dev": "vite",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write ."
   },
-
   "dependencies": {
     "@playground/lib": "workspace:*",
     "react": "^19",

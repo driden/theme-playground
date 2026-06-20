@@ -8,8 +8,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { assertNonNull } from "@playground/lib/assert";
 
-const elem = document.getElementById("root")!;
+const elem = document.getElementById("root");
+assertNonNull(elem);
 const app = (
     <StrictMode>
         <App />
@@ -17,4 +19,6 @@ const app = (
 );
 
 // https://bun.com/docs/bundler/hot-reloading#import-meta-hot-data
-(import.meta.hot.data.root ??= createRoot(elem)).render(app);
+import.meta.hot.data.root ??= createRoot(elem);
+const root = import.meta.hot.data.root;
+root.render(app);

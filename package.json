@@ -1,18 +1,7 @@
 {
   "name": "theme-playground",
   "private": true,
-  "workspaces": ["apps/*"],
-  "scripts": {
-    "dev": "trap 'kill $(jobs -p) 2>/dev/null' EXIT; bun run dev:server & bun run dev:web; wait",
-    "dev:server": "bun --hot server.ts",
-    "dev:web": "vite",
-    "build": "tsc --noEmit && vite build",
-    "test": "bun test",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint --write .",
-    "check": "biome check .",
-    "check:fix": "biome check --write ."
-  },
+  "workspaces": [
+    "apps/*"
+  ]
 }

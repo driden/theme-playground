@@ -182,6 +182,7 @@ code {
   *,
   ::before,
   ::after {
+    /* biome-ignore lint/complexity/noImportantStyles: it was already like this */
     animation: none !important;
   }
 }

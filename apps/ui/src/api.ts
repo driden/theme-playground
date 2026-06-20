@@ -1,15 +1,14 @@
 import { z } from "zod";
-import { 
-    ThemeListingSchema,
-    ErrorResponseSchema,
-    errMessage,
-    ThemeListing,
-    ThemeState,
-    ThemeStateSchema,
-    AppState,
-    AppStateSchema
+import {
+  ThemeListingSchema,
+  ErrorResponseSchema,
+  errMessage,
+  type ThemeListing,
+  type ThemeState,
+  ThemeStateSchema,
+  type AppState,
+  AppStateSchema,
 } from "@playground/lib/types";
-
 
 const ThemeListingArraySchema = z.array(ThemeListingSchema);
 

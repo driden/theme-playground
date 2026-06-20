@@ -2,7 +2,7 @@
 // rendered sample — keeping tokens packed per line is more readable than
 // one-token-per-line. Format opts out for this file only.
 import { Fragment, useMemo, type ReactNode } from "react";
-import { Palette } from "@playground/lib/types";
+import type { Palette } from "@playground/lib/types";
 
 type Props = { palette: Palette; font: string };
 
