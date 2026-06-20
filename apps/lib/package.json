@@ -5,11 +5,14 @@
     "@types/bun": "latest"
   },
   "exports": {
-     "./*": "./src/*.ts",
+    "./*": "./src/*.ts"
   },
   "private": true,
   "scripts": {
-     "build": "tsc --noEmit",
-     "check": "bun run build && bun test"
+    "build": "tsc --noEmit",
+    "check": "bun run build && bun test"
+  },
+  "peerDependencies": {
+    "typescript": "^6.0.3"
   }
 }

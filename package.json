@@ -1,7 +1,6 @@
 {
   "name": "theme-playground",
   "private": true,
-  "type": "module",
   "workspaces": ["apps/*"],
   "scripts": {
     "dev": "trap 'kill $(jobs -p) 2>/dev/null' EXIT; bun run dev:server & bun run dev:web; wait",
