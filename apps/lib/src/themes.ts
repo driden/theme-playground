@@ -11,11 +11,7 @@ import {
   type AppName,
 } from "./types";
 
-// THEMES_DIR can be pointed at any directory containing per-theme subdirs
-// (each with colors.toml + starship.toml). Defaults to ../themes for a
-// repo-local layout but the env var lets the playground run standalone
-// against any dotfiles checkout.
-export const THEMES_DIR = process.env.THEMES_DIR ?? path.resolve(import.meta.dir);
+import { config } from "./config"
 
 async function readCurrentThemeName(): Promise<string> {
   const namePath = path.join(os.homedir(), ".config/themes/current/name");
@@ -24,7 +20,7 @@ async function readCurrentThemeName(): Promise<string> {
 }
 
 export async function listThemes(): Promise<ThemeListing[]> {
-  const entries = await fs.readdir(THEMES_DIR, { withFileTypes: true });
+  const entries = await fs.readdir(config().themesDir, { withFileTypes: true });
   const names = entries
     .filter(entry => entry.isDirectory() && entry.name !== "templates")
     .map(entry => entry.name)
@@ -39,7 +35,7 @@ export async function themeExists(themeName: string): Promise<boolean> {
 }
 
 export async function readPalette(themeName: string): Promise<Palette> {
-  const text = await fs.readFile(path.join(THEMES_DIR, themeName, "colors.toml"), "utf8");
+  const text = await fs.readFile(path.join(config().themesDir, themeName, "colors.toml"), "utf8");
   const parsed = TOML.parse(text) as { palette?: unknown };
   return PaletteSchema.parse(parsed.palette ?? {});
 }
@@ -60,8 +56,8 @@ const APP_SECTIONS_FILE: Record<AppName, string> = {
 export async function readSections(themeName: string, app: AppName): Promise<SectionConfig | null> {
   const filename = APP_SECTIONS_FILE[app];
   const candidates = [
-    path.join(THEMES_DIR, themeName, filename),
-    path.join(THEMES_DIR, "templates", filename),
+    path.join(config().themesDir, themeName, filename),
+    path.join(config().themesDir, "templates", filename),
   ];
   for (const candidate of candidates) {
     const file = Bun.file(candidate);

@@ -2,18 +2,26 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { handleAction, handleSlotEdit } from "../src/server";
 import type { AppState } from "@playground/lib/types";
+import { mock } from "bun:test";
 
-// server.ts reads THEMES_DIR at import time and binds a port unless run as the
-// main module, so the env must be set before the dynamic import below.
+// THEMES_DIR is a module-level const in @playground/lib/themes evaluated at
+// import time, so we must set the env var BEFORE the server module is loaded.
+// Use a dynamic import inside beforeAll — and critically, NO static import of
+// the server module, or Bun's module cache would return the stale const.
 let tmpDir: string;
+type ServerModule = typeof import("../src/server");
+let server: ServerModule | null = null;
 
 beforeAll(async () => {
   tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "theme-playground-"));
+
+  mock.module("@playground/lib/config", () => ({
+    config: () => ({ themesDir: tmpDir }),
+  }));
   const fixture = path.join(import.meta.dir, "fixtures", "themes", "bamboo");
   await fs.cp(fixture, path.join(tmpDir, "bamboo"), { recursive: true });
-  process.env.THEMES_DIR = tmpDir;
+  server = await import("../src/server");
 });
 
 afterAll(async () => {
@@ -21,7 +29,7 @@ afterAll(async () => {
 });
 
 test("save clears undo history so undo is no longer available", async () => {
-  const editResponse = await handleSlotEdit("bamboo", "starship", {
+  const editResponse = await server?.handleSlotEdit("bamboo", "starship", {
     slotId: "os/style/bg/1@799",
     newPaletteKey: "string",
   });
@@ -30,7 +38,7 @@ test("save clears undo history so undo is no longer available", async () => {
   expect(appState.dirty).toBeTrue();
   expect(appState.canUndo).toBeTrue();
 
-  const saveResponse = await handleAction("bamboo", "starship", "save");
+  const saveResponse = await server?.handleAction("bamboo", "starship", "save");
   const afterSave = saveResponse as AppState;
   expect(afterSave.dirty).toBe(false);
   expect(afterSave.canUndo).toBe(false);

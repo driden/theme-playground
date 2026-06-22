@@ -1,7 +1,7 @@
+import type { FormatToken } from "@playground/lib/format-tokens";
+import { groupSlots, orderByPrompt } from "@playground/lib/groups";
+import type { ColorSlot } from "@playground/lib/types";
 import { describe, expect, test } from "bun:test";
-import { groupSlots, orderByPrompt } from "../src/groups";
-import type { ColorSlot } from "../src/slot-discovery";
-import type { FormatToken } from "../src/format-tokens";
 
 function slot(
   partial: Partial<ColorSlot> & { section: string; field: string; role: "fg" | "bg"; key: string },

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/mfussenegger/dapconfig-schema/master/dapconfig-schema.json",
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "bun",
+      "request": "launch",
+      "name": "Bun test this file",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "test",
+        "--inspect-wait",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "sourceMaps": true,
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "THEMES_DIR": "$HOME/code/dotfiles/themes"
+      }
+    },
+    {
+      "type": "bun",
+      "request": "launch",
+      "name": "Bun test all files",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": [
+        "test",
+        "--inspect-wait"
+      ],
+      "cwd": "${workspaceFolder}",
+      "sourceMaps": true,
+      "console": "integratedTerminal",
+      "env": {
+        "THEMES_DIR": "$HOME/code/dotfiles/themes"
+      }
+    }
+  ]
+}

@@ -2,13 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { discoverSlots, paletteKeysFromStarshipToml } from "./slot-discovery";
-import {
-  THEMES_DIR,
-  listThemes,
-  themeExists,
-  readPalette,
-  readSections,
-} from "@playground/lib/themes";
+import { listThemes, themeExists, readPalette, readSections } from "@playground/lib/themes";
 import { resolveSection } from "@playground/lib/sections";
 import { parseFormatTokens } from "@playground/lib/format-tokens";
 import {
@@ -22,6 +16,7 @@ import {
   type ThemeState,
   type SlotEditBody,
 } from "@playground/lib/types";
+import { config } from "@playground/lib/config";
 
 class HttpError extends Error {
   constructor(
@@ -59,11 +54,11 @@ const APP_CONFIG_FILE: Record<AppName, string> = {
 };
 
 function originalPath(theme: string, app: AppName): string {
-  return path.join(THEMES_DIR, theme, APP_CONFIG_FILE[app]);
+  return path.join(config().themesDir, theme, APP_CONFIG_FILE[app]);
 }
 
 function getDraftDir(theme: string, app: AppName): string {
-  return path.join(THEMES_DIR, theme, ".drafts", app);
+  return path.join(config().themesDir, theme, ".drafts", app);
 }
 
 function draftPath(theme: string, app: AppName): string {
@@ -136,7 +131,7 @@ async function renderStarship(
         "--cmd-duration=1234",
         "--jobs=0",
       ],
-      { cwd: path.join(THEMES_DIR, theme), env, stdout: "pipe", stderr: "pipe" },
+      { cwd: path.join(config().themesDir, theme), env, stdout: "pipe", stderr: "pipe" },
     );
     const [stdout, stderr] = await Promise.all([
       new Response(proc.stdout).text(),

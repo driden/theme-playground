@@ -5,7 +5,7 @@
 import * as TreeSitter from "web-tree-sitter";
 import { createRequire } from "node:module";
 import { assertNonNull } from "@playground/lib/assert";
-import { type ColorSlot, type SlotRole, type SlotMode } from "@playground/lib/types";
+import type { ColorSlot, SlotRole, SlotMode } from "@playground/lib/types";
 
 // Lifted from starship's parse_style_string.
 const MODIFIERS = new Set([
