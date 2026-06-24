@@ -17,6 +17,7 @@ import {
   type SlotEditBody,
 } from "@playground/lib/types";
 import { config } from "@playground/lib/config";
+import type { Serve } from "bun";
 
 class HttpError extends Error {
   constructor(
@@ -25,28 +26,6 @@ class HttpError extends Error {
   ) {
     super(msg);
   }
-}
-
-// Recursively builds a fixed-length tuple of `string`, used to type
-// matchRoute's return so call sites can destructure without a cast.
-type StringTuple<N extends number, Acc extends string[] = []> = Acc["length"] extends N
-  ? Acc
-  : StringTuple<N, [...Acc, string]>;
-
-// Match a path against a regex with a known number of mandatory capture
-// groups. Returns a typed tuple of `arity` strings on match, null otherwise.
-function matchRoute<N extends number>(
-  pathname: string,
-  re: RegExp,
-  arity: N,
-): StringTuple<N> | null {
-  const match = pathname.match(re);
-  if (!match) return null;
-  const caps = match.slice(1);
-  if (caps.length !== arity) return null;
-  // Sound: we just validated `caps.length === arity`, and regex capture groups
-  // without `?` always return string when the whole match succeeds.
-  return caps as StringTuple<N>;
 }
 
 const APP_CONFIG_FILE: Record<AppName, string> = {
@@ -189,6 +168,82 @@ async function buildThemeState(themeName: string): Promise<ThemeState> {
   };
 }
 
+export const routes: Serve.Routes<undefined, string> = {
+  "/api/themes": json(await listThemes()),
+  "/api/themes/:theme": async req => json(await handleGetTheme(req.params.theme as string)),
+  "/api/themes/:theme/:app/:action": {
+    POST: async req => {
+      const theme = req.params.theme as string;
+      const app = req.params.app as string;
+      const action = req.params.action as string;
+      return json(await handleAction(theme, app, action));
+    },
+  },
+  "/api/themes/:theme/:app": {
+    POST: async req => {
+      const theme = req.params.theme as string;
+      const app = req.params.app as string;
+
+      await assertThemeExists(theme);
+      assertAppName(app);
+
+      const parsed = SlotEditBodySchema.safeParse(await req.json());
+      if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
+
+      const result = await handleSlotEdit(theme, app, parsed.data);
+
+      if (isPaletteError(result)) {
+        return json({ error: result.cause }, result.user ? 400 : 409);
+      }
+
+      return json(result);
+    },
+  },
+  "/api/themes/:theme/:app/section": {
+    POST: async req => {
+      const theme = req.params.theme as string;
+      const app = req.params.app as string;
+
+      await assertThemeExists(theme);
+      assertAppName(app);
+
+      const parsed = SectionEditBodySchema.safeParse(await req.json());
+      if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
+      const { sectionName, newPaletteKey } = parsed.data;
+
+      const sections = await readSections(theme, app);
+      if (!sections) throw new HttpError(400, "this theme has no starship.sections.json");
+
+      const draft = await ensureDraft(theme, app);
+      const current = await fs.readFile(draft, "utf8");
+      const palette = paletteKeysFromStarshipToml(current);
+      if (!palette.has(newPaletteKey.toLowerCase())) {
+        throw new HttpError(
+          400,
+          `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
+        );
+      }
+
+      const colorSlots = discoverSlots(current, palette, "name-token");
+      const formatTokens = parseFormatTokens(current);
+      const targetSlots = resolveSection(sectionName, sections, colorSlots, formatTokens);
+      if (targetSlots.length === 0) {
+        throw new HttpError(404, `section '${sectionName}' not found or has no editable slots`);
+      }
+
+      pushHistory(theme, app, current);
+      // Apply right-to-left so earlier byte offsets remain valid after each splice.
+      const sorted = [...targetSlots].sort((a, b) => b.start - a.start);
+      const next = sorted.reduce(
+        (acc, slot) => acc.slice(0, slot.start) + newPaletteKey + acc.slice(slot.end),
+        current,
+      );
+      await fs.writeFile(draft, next, "utf8");
+      return json(await buildAppState(theme));
+    },
+  },
+};
+
 function json(value: unknown, status = 200): Response {
   return new Response(JSON.stringify(value), {
     status,
@@ -283,100 +338,4 @@ export async function handleSlotEdit(
   const next = current.slice(0, slot.start) + newPaletteKey + current.slice(slot.end);
   await fs.writeFile(draft, next, "utf8");
   return buildAppState(themeName);
-}
-
-export async function handleRequest(req: Request): Promise<Response> {
-  const url = new URL(req.url);
-  const pathname = url.pathname;
-  try {
-    if (req.method === "GET" && pathname === "/api/themes") {
-      return json(await listThemes());
-    }
-
-    const themeCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)$/, 1);
-    if (req.method === "GET" && themeCaps) {
-      const [themeName] = themeCaps;
-      return json(await handleGetTheme(themeName));
-    }
-
-    // POST /api/themes/:name/:app/(undo|save|discard) — draft actions
-    const actionCaps = matchRoute(
-      pathname,
-      /^\/api\/themes\/([\w-]+)\/([\w-]+)\/(undo|save|discard)$/,
-      3,
-    );
-    if (req.method === "POST" && actionCaps) {
-      const [themeName, app, action] = actionCaps;
-      return json(await handleAction(themeName, app, action));
-    }
-
-    // TODO: extract this matchRoute/if-chain dispatch into a dedicated router
-    // module so the handler isn't one long sequence of regex matches.
-    // POST /api/themes/:name/:app/section — atomic section-level edit
-    const sectionCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)\/section$/, 2);
-    if (req.method === "POST" && sectionCaps) {
-      const [themeName, app] = sectionCaps;
-      await assertThemeExists(themeName);
-      assertAppName(app);
-
-      const parsed = SectionEditBodySchema.safeParse(await req.json());
-      if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
-      const { sectionName, newPaletteKey } = parsed.data;
-
-      const sections = await readSections(themeName, app);
-      if (!sections) throw new HttpError(400, "this theme has no starship.sections.json");
-
-      const draft = await ensureDraft(themeName, app);
-      const current = await fs.readFile(draft, "utf8");
-      const palette = paletteKeysFromStarshipToml(current);
-      if (!palette.has(newPaletteKey.toLowerCase())) {
-        throw new HttpError(
-          400,
-          `key '${newPaletteKey}' not in [palettes.theme] — run \`theme build\`?`,
-        );
-      }
-
-      const colorSlots = discoverSlots(current, palette, "name-token");
-      const formatTokens = parseFormatTokens(current);
-      const targetSlots = resolveSection(sectionName, sections, colorSlots, formatTokens);
-      if (targetSlots.length === 0) {
-        throw new HttpError(404, `section '${sectionName}' not found or has no editable slots`);
-      }
-
-      pushHistory(themeName, app, current);
-      // Apply right-to-left so earlier byte offsets remain valid after each splice.
-      const sorted = [...targetSlots].sort((a, b) => b.start - a.start);
-      const next = sorted.reduce(
-        (acc, slot) => acc.slice(0, slot.start) + newPaletteKey + acc.slice(slot.end),
-        current,
-      );
-      await fs.writeFile(draft, next, "utf8");
-      return json(await buildAppState(themeName));
-    }
-
-    // POST /api/themes/:name/:app — slot edit (writes to draft)
-    const editCaps = matchRoute(pathname, /^\/api\/themes\/([\w-]+)\/([\w-]+)$/, 2);
-    if (req.method === "POST" && editCaps) {
-      const [themeName, app] = editCaps;
-      await assertThemeExists(themeName);
-      assertAppName(app);
-
-      const parsed = SlotEditBodySchema.safeParse(await req.json());
-      if (!parsed.success) throw new HttpError(400, `invalid body: ${parsed.error.message}`);
-
-      const result = await handleSlotEdit(themeName, app, parsed.data);
-
-      if (isPaletteError(result)) {
-        return json({ error: result.cause }, result.user ? 400 : 409);
-      }
-
-      return json(result);
-    }
-
-    return json({ error: "not found" }, 404);
-  } catch (e: unknown) {
-    if (e instanceof HttpError) return json({ error: e.message }, e.status);
-    console.error(e);
-    return json({ error: "internal server error" }, 500);
-  }
 }
