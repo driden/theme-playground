@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import os from "node:os";
 import TOML from "@iarna/toml";
+import { err, ok, ResultAsync } from "neverthrow";
 import {
   PaletteSchema,
   SectionConfigSchema,
@@ -11,27 +11,40 @@ import {
   type AppName,
 } from "./types";
 
-import { config } from "./config"
+import { config } from "./config";
+import { type IOError, IOErrors } from "./errors/IOError";
 
-async function readCurrentThemeName(): Promise<string> {
-  const namePath = path.join(os.homedir(), ".config/themes/current/name");
-  const nameFile = Bun.file(namePath);
-  return (await nameFile.exists()) ? (await nameFile.text()).trim() : "";
+export function readCurrentThemeName(): ResultAsync<string, IOError> {
+  const namePath = config().currentThemePath;
+
+  return ResultAsync.fromSafePromise(fs.exists(namePath))
+    .andThen(exists => (exists ? ok(namePath) : err(IOErrors.currentThemeFolderMissing(namePath))))
+    .andThen(p =>
+      ResultAsync.fromPromise(fs.readlink(p), error =>
+        IOErrors.cantReadCurrentFolderLink(namePath, error),
+      ),
+    )
+    .map(path.basename);
 }
 
-export async function listThemes(): Promise<ThemeListing[]> {
-  const entries = await fs.readdir(config().themesDir, { withFileTypes: true });
-  const names = entries
-    .filter(entry => entry.isDirectory() && entry.name !== "templates")
-    .map(entry => entry.name)
-    .sort();
-  const current = await readCurrentThemeName();
-  return names.map(name => ({ name, current: name === current }));
+export function listThemes(): ResultAsync<ThemeListing[], IOError> {
+  const themes = ResultAsync.fromPromise(
+    fs.readdir(config().themesDir, { withFileTypes: true }),
+    er => IOErrors.cantReadThemesFolder(config().themesDir, er),
+  );
+
+  const current = readCurrentThemeName();
+
+  return ResultAsync.combine([themes, current]).map(([entries, current]) =>
+    entries
+      .filter(entry => entry.isDirectory() && entry.name !== "templates")
+      .map(entry => entry.name)
+      .map(name => ({ name, current: name === current })),
+  );
 }
 
-export async function themeExists(themeName: string): Promise<boolean> {
-  const themes = await listThemes();
-  return themes.some(theme => theme.name === themeName);
+export function themeExists(themeName: string): ResultAsync<boolean, IOError> {
+  return listThemes().map(themes => themes.some(theme => theme.name === themeName));
 }
 
 export async function readPalette(themeName: string): Promise<Palette> {

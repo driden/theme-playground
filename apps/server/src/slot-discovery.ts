@@ -5,7 +5,7 @@
 import * as TreeSitter from "web-tree-sitter";
 import { createRequire } from "node:module";
 import { assertNonNull } from "@playground/lib/assert";
-import type { ColorSlot, SlotRole, SlotMode } from "@playground/lib/types";
+import { type ColorSlot, type SlotRole, type SlotMode, errMessage } from "@playground/lib/types";
 
 // Lifted from starship's parse_style_string.
 const MODIFIERS = new Set([
@@ -179,6 +179,18 @@ export function discoverSlots(text: string, palette: Set<string>, mode: SlotMode
 
   visit(tree.rootNode);
   return [...styleOut, ...bracketOut];
+}
+
+export function tryDiscoverSlots(
+  fileRaw: string,
+  palette: Set<string>,
+): { colorSlots: ColorSlot[]; slotError: string | null } {
+  try {
+    return { colorSlots: discoverSlots(fileRaw, palette, "name-token"), slotError: null };
+  } catch (e: unknown) {
+    console.error(e);
+    return { colorSlots: [], slotError: errMessage(e) };
+  }
 }
 
 export function paletteKeysFromStarshipToml(text: string): Set<string> {

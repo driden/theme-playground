@@ -2,7 +2,8 @@
   "name": "@playground/lib",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@biomejs/biome": "^2.4.16"
   },
   "exports": {
     "./*": "./src/*.ts"
@@ -10,7 +11,10 @@
   "private": true,
   "scripts": {
     "build": "tsc --noEmit",
-    "check": "bun run build && bun test"
+    "check": "bun run build && bun test",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "lint:fix": "biome lint --write ."
   },
   "peerDependencies": {
     "@playground/lib": "workspace:*",
@@ -18,5 +22,8 @@
     "typescript": "^6.0.3",
     "web-tree-sitter": "^0.26.9",
     "zod": "^4.4.3"
+  },
+  "dependencies": {
+    "neverthrow": "^8.2.0"
   }
 }

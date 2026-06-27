@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { AnsiUp } from "ansi_up";
-import { SlotRole } from "@playground/lib/types";
+import type { SlotRole } from "@playground/lib/types";
 
 type Props = {
   ansi: string | null;

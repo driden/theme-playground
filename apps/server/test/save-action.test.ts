@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import type { AppState } from "@playground/lib/types";
 import { mock } from "bun:test";
+import { handleAction } from "../src/apps/state";
 
 // THEMES_DIR is a module-level const in @playground/lib/themes evaluated at
 // import time, so we must set the env var BEFORE the server module is loaded.
@@ -38,7 +39,7 @@ test("save clears undo history so undo is no longer available", async () => {
   expect(appState.dirty).toBeTrue();
   expect(appState.canUndo).toBeTrue();
 
-  const saveResponse = await server?.handleAction("bamboo", "starship", "save");
+  const saveResponse = await handleAction("bamboo", "starship", "save");
   const afterSave = saveResponse as AppState;
   expect(afterSave.dirty).toBe(false);
   expect(afterSave.canUndo).toBe(false);

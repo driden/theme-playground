@@ -14,4 +14,16 @@ description = "Run the tests"
 env = { THEMES_DIR = '$HOME/code/dotfiles/themes' }
 run = "bun test"
 
+[tasks.build]
+description = "Run the tests"
+env = { THEMES_DIR = '$HOME/code/dotfiles/themes' }
+run = "bun --workspaces run build"
+
+[tasks.lint]
+description = "Run the tests"
+run = "bun --workspaces run lint"
+
+[tasks.fmt]
+description = "Run the tests"
+run = "bun --workspaces run format"
 
