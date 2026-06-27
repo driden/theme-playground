@@ -18,15 +18,7 @@ import {
 } from "@playground/lib/types";
 import { config } from "@playground/lib/config";
 import type { Serve } from "bun";
-
-class HttpError extends Error {
-  constructor(
-    public status: number,
-    msg: string,
-  ) {
-    super(msg);
-  }
-}
+import { HttpError } from "./http.error";
 
 const APP_CONFIG_FILE: Record<AppName, string> = {
   starship: "starship.toml",
@@ -169,7 +161,7 @@ async function buildThemeState(themeName: string): Promise<ThemeState> {
 }
 
 export const routes: Serve.Routes<undefined, string> = {
-  "/api/themes": json(await listThemes()),
+  "/api/themes": async () => json(await listThemes()),
   "/api/themes/:theme": async req => json(await handleGetTheme(req.params.theme as string)),
   "/api/themes/:theme/:app/:action": {
     POST: async req => {

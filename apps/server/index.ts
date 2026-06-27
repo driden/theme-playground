@@ -1,3 +1,4 @@
+import { HttpError } from "./src/http.error";
 import { routes } from "./src/server";
 
 if (import.meta.main) {
@@ -6,8 +7,10 @@ if (import.meta.main) {
     routes: routes,
     error(error) {
       console.error(error);
-      return new Response(`Error: ${error.message}`, {
-        status: 500,
+      const status = error instanceof HttpError ? error.status : 500;
+      return new Response(JSON.stringify({ error: error.message }), {
+        status,
+        headers: { "content-type": "application/json" },
       });
     },
   });
