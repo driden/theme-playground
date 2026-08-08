@@ -1,6 +1,6 @@
 import path from "node:path";
 import os from "node:os";
-import { config } from "@playground/lib/config";
+import { config } from "../config";
 
 export async function render(
   theme: string,

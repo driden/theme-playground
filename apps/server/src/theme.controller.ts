@@ -1,4 +1,4 @@
-import { listThemes } from "@playground/lib/themes";
+import { listThemes } from "./themes";
 import { HttpError } from "./http.error";
 
 export const getAllThemes = async () => {

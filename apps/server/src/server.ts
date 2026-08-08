@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import { discoverSlots, paletteKeysFromStarshipToml } from "./slot-discovery";
-import { themeExists, readSections } from "@playground/lib/themes";
+import { themeExists, readSections } from "./themes";
 import { resolveSection } from "@playground/lib/sections";
 import { parseFormatTokens } from "@playground/lib/format-tokens";
 import {

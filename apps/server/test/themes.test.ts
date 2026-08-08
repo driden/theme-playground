@@ -1,9 +1,8 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import fs from "node:fs/promises";
 import { readCurrentThemeName } from "../src/themes";
-import type { EitherAsync } from "purify-ts";
 
-const mockExists = mock();
-const mockReadlink = mock();
+import type { EitherAsync } from "purify-ts";
 
 const expectEitherToBe = <ErrorType extends { kind: string }, Value>(
   actual: EitherAsync<ErrorType, Value>,
@@ -31,16 +30,17 @@ const expectEitherToBeErr = <ErrorType extends { kind: string }, Value>(
     },
   });
 
-mock.module("node:fs/promises", () => ({
-  default: {
-    exists: mockExists,
-    readlink: mockReadlink,
-  },
-}));
+const mockExists = spyOn(fs, "exists");
+const mockReadlink = spyOn(fs, "readlink");
 
 beforeEach(() => {
   mockExists.mockReset();
   mockReadlink.mockReset();
+});
+
+afterAll(() => {
+  mockExists.mockRestore();
+  mockReadlink.mockRestore();
 });
 
 describe("readCurrentThemeName", () => {
@@ -48,18 +48,18 @@ describe("readCurrentThemeName", () => {
     mockExists.mockResolvedValue(true);
     mockReadlink.mockResolvedValue("/home/user/.themes/mytheme");
 
-    expectEitherToBe(readCurrentThemeName(), "mytheme");
+    await expectEitherToBe(readCurrentThemeName(), "mytheme");
   });
 
   it("returns CurrentThemeFolderMissing when path does not exist", async () => {
     mockExists.mockResolvedValue(false);
-    expectEitherToBeErr(readCurrentThemeName(), "CurrentThemeFolderMissing");
+    await expectEitherToBeErr(readCurrentThemeName(), "CurrentThemeFolderMissing");
   });
 
   it("returns CantReadCurrentFolderLink when readlink fails", async () => {
     mockExists.mockResolvedValue(true);
     mockReadlink.mockRejectedValue(new Error("EACCES: permission denied"));
 
-    expectEitherToBeErr(readCurrentThemeName(), "CantReadCurrentFolderLink");
+    await expectEitherToBeErr(readCurrentThemeName(), "CantReadCurrentFolderLink");
   });
 });

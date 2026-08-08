@@ -1,4 +1,4 @@
-import { config } from "@playground/lib/config";
+import { config } from "./config";
 import type { AppName } from "@playground/lib/types";
 import fs from "node:fs/promises";
 import path from "node:path";

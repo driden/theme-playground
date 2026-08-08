@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 
-import { readPalette, readSections, themeExists } from "@playground/lib/themes";
+import { readPalette, readSections, themeExists } from "../themes";
 import { type AppName, type AppState, isAppName, type ThemeState } from "@playground/lib/types";
 
 import { draftPath, ensureDraft, handleDiscard, handleSave, isDirty } from "../draft";
