@@ -1,9 +1,14 @@
 {
   "name": "@playground/lib",
-  "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
     "@biomejs/biome": "^2.4.16"
+  },
+  "peerDependencies": {
+    "@playground/lib": "workspace:*",
+    "typescript": "^6.0.3",
+    "web-tree-sitter": "^0.26.9",
+    "zod": "^4.4.3"
   },
   "exports": {
     "./*": "./src/*.ts"
@@ -16,14 +21,5 @@
     "format": "biome format --write .",
     "lint:fix": "biome lint --write ."
   },
-  "peerDependencies": {
-    "@playground/lib": "workspace:*",
-    "@iarna/toml": "^2.2.5",
-    "typescript": "^6.0.3",
-    "web-tree-sitter": "^0.26.9",
-    "zod": "^4.4.3"
-  },
-  "dependencies": {
-    "purify-ts": "^2.1.4"
-  }
+  "type": "module"
 }

@@ -11,7 +11,6 @@ export function originalPath(theme: string, app: AppName): string {
   return path.join(config().themesDir, theme, APP_CONFIG_FILE[app]);
 }
 
-
 type Config = {
   themesDir: string;
   currentThemePath: string;
@@ -29,4 +28,3 @@ export const config = (() => {
     return instance;
   };
 })();
-

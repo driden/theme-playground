@@ -7,15 +7,11 @@
     },
     "apps/lib": {
       "name": "@playground/lib",
-      "dependencies": {
-        "purify-ts": "^2.1.4",
-      },
       "devDependencies": {
         "@biomejs/biome": "^2.4.16",
         "@types/bun": "latest",
       },
       "peerDependencies": {
-        "@iarna/toml": "^2.2.5",
         "@playground/lib": "workspace:*",
         "typescript": "^6.0.3",
         "web-tree-sitter": "^0.26.9",

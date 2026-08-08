@@ -11,7 +11,7 @@ import {
 } from "@playground/lib/types";
 
 import { config } from "./config";
-import { type IOError, IOErrors } from "@playground/lib/errors/IOError";
+import { type IOError, IOErrors } from "./errors/IOError";
 import { EitherAsync, Left, Right } from "purify-ts";
 
 function fromPromise<Err, Val>(
