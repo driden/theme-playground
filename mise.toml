@@ -27,3 +27,6 @@ run = "bun --workspaces run lint"
 description = "Run the tests"
 run = "bun --workspaces run format"
 
+[tools]
+opencode = "latest"
+

@@ -6,10 +6,11 @@ Local web app for visually re-assigning palette colors to starship prompt segmen
 
 ```sh
 bun install            # first time only
-THEMES_DIR=/path/to/dotfiles/themes bun run dev
 ```
 
-Open <http://localhost:5173>. Backend listens on :5174; Vite proxies `/api/*` to it.
+```
+mise run dev
+```
 
 **Theme discovery:** the playground expects `THEMES_DIR` to point at a directory whose subdirectories each contain at minimum a `starship.toml` (and ideally a `colors.toml`). One subdir = one theme. Without the env var it defaults to `../themes` (handy if the playground lives next to your themes directory).
 
@@ -56,13 +57,3 @@ The interesting bit. `discoverSlots(text, palette, mode)` is a pure function:
 The starship-specific parts (style tokenizer + `[label](style)` extraction) stay hand-rolled because they're not TOML — they're starship's mini-DSL embedded inside TOML strings.
 
 Forward-compat: `mode: "hex-literal"` is stubbed (`throw TODO(v2)`) for the eventual tmux/fzf support, which scans hex literals in generated files instead of palette key names. The collision rule (multiple palette keys often share the same hex) is spelled out in the design doc.
-
-## Font stack
-
-The prompt preview uses `Comic Code, "Hack Nerd Font Mono", Monaco, monospace`, mirroring `.config/ghostty/config`. All three are system-installed (none bundled). The browser falls back glyph by glyph: text from Comic Code, Powerline/Nerd icons from Hack, the apple logo (U+F8FF) from Monaco.
-
-## Design / plan
-
-- Spec: `docs/superpowers/specs/2026-05-31-theme-playground-design.md`
-- Plan: `docs/superpowers/plans/2026-05-31-theme-playground.md`
-- Broader theming system this builds on: `docs/superpowers/specs/2026-05-30-theming-design.md`

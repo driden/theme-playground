@@ -1,8 +1,35 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { readCurrentThemeName } from "../src/themes";
+import type { EitherAsync } from "purify-ts";
 
 const mockExists = mock();
 const mockReadlink = mock();
+
+const expectEitherToBe = <ErrorType extends { kind: string }, Value>(
+  actual: EitherAsync<ErrorType, Value>,
+  expectedValue: Value,
+): Promise<void> =>
+  actual.caseOf({
+    Left: error => {
+      throw new Error(`Expected Right, received Left(${error.kind})`);
+    },
+    Right: actualValue => {
+      expect(actualValue).toEqual(expectedValue);
+    },
+  });
+
+const expectEitherToBeErr = <ErrorType extends { kind: string }, Value>(
+  actual: EitherAsync<ErrorType, Value>,
+  expectedKind: ErrorType["kind"],
+): Promise<void> =>
+  actual.caseOf({
+    Left: error => {
+      expect(error.kind).toBe(expectedKind);
+    },
+    Right: actualValue => {
+      throw new Error(`Expected Left(${expectedKind}), received Right(${String(actualValue)})`);
+    },
+  });
 
 mock.module("node:fs/promises", () => ({
   default: {
@@ -21,29 +48,18 @@ describe("readCurrentThemeName", () => {
     mockExists.mockResolvedValue(true);
     mockReadlink.mockResolvedValue("/home/user/.themes/mytheme");
 
-    const result = await readCurrentThemeName();
-
-    expect(result.isOk()).toBe(true);
-    expect(result._unsafeUnwrap()).toBe("mytheme");
+    expectEitherToBe(readCurrentThemeName(), "mytheme");
   });
 
   it("returns CurrentThemeFolderMissing when path does not exist", async () => {
     mockExists.mockResolvedValue(false);
-
-    const result = await readCurrentThemeName();
-
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr().kind).toBe("CurrentThemeFolderMissing");
+    expectEitherToBeErr(readCurrentThemeName(), "CurrentThemeFolderMissing");
   });
 
   it("returns CantReadCurrentFolderLink when readlink fails", async () => {
     mockExists.mockResolvedValue(true);
     mockReadlink.mockRejectedValue(new Error("EACCES: permission denied"));
 
-    const result = await readCurrentThemeName();
-
-    expect(result.isErr()).toBe(true);
-    const error = result._unsafeUnwrapErr();
-    expect(error.kind).toBe("CantReadCurrentFolderLink");
+    expectEitherToBeErr(readCurrentThemeName(), "CantReadCurrentFolderLink");
   });
 });

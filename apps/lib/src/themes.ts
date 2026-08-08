@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import TOML from "@iarna/toml";
-import { err, ok, ResultAsync } from "neverthrow";
 import {
   PaletteSchema,
   SectionConfigSchema,
@@ -13,37 +12,50 @@ import {
 
 import { config } from "./config";
 import { type IOError, IOErrors } from "./errors/IOError";
+import { EitherAsync, Left, Right } from "purify-ts";
 
-export function readCurrentThemeName(): ResultAsync<string, IOError> {
+function fromPromise<Err, Val>(
+  promise: () => Promise<Val>,
+  mapError: (error: unknown) => Err,
+): EitherAsync<Err, Val> {
+  return EitherAsync<unknown, Val>(promise).mapLeft(mapError);
+}
+
+export function readCurrentThemeName(): EitherAsync<IOError, string> {
   const namePath = config().currentThemePath;
-
-  return ResultAsync.fromSafePromise(fs.exists(namePath))
-    .andThen(exists => (exists ? ok(namePath) : err(IOErrors.currentThemeFolderMissing(namePath))))
-    .andThen(p =>
-      ResultAsync.fromPromise(fs.readlink(p), error =>
-        IOErrors.cantReadCurrentFolderLink(namePath, error),
+  return EitherAsync<IOError, boolean>(() => fs.exists(namePath))
+    .chain(exists =>
+      EitherAsync.liftEither<IOError, string>(
+        exists ? Right(namePath) : Left(IOErrors.currentThemeFolderMissing(namePath)),
+      ),
+    )
+    .chain(currentThemePath =>
+      fromPromise<IOError, string>(
+        () => fs.readlink(currentThemePath),
+        error => IOErrors.cantReadCurrentFolderLink(namePath, error),
       ),
     )
     .map(path.basename);
 }
 
-export function listThemes(): ResultAsync<ThemeListing[], IOError> {
-  const themes = ResultAsync.fromPromise(
-    fs.readdir(config().themesDir, { withFileTypes: true }),
+export function listThemes(): EitherAsync<IOError, ThemeListing[]> {
+  const themes = fromPromise(
+    () => fs.readdir(config().themesDir, { withFileTypes: true }),
     er => IOErrors.cantReadThemesFolder(config().themesDir, er),
+  ).map(entries =>
+    entries
+      .filter(entry => entry.isDirectory() && entry.name !== "templates")
+      .map(entry => entry.name),
   );
 
   const current = readCurrentThemeName();
 
-  return ResultAsync.combine([themes, current]).map(([entries, current]) =>
-    entries
-      .filter(entry => entry.isDirectory() && entry.name !== "templates")
-      .map(entry => entry.name)
-      .map(name => ({ name, current: name === current })),
+  return themes.chain(names =>
+    current.map(currentTheme => names.map(name => ({ name, current: name === currentTheme }))),
   );
 }
 
-export function themeExists(themeName: string): ResultAsync<boolean, IOError> {
+export function themeExists(themeName: string): EitherAsync<IOError, boolean> {
   return listThemes().map(themes => themes.some(theme => theme.name === themeName));
 }
 

@@ -24,6 +24,6 @@
     "zod": "^4.4.3"
   },
   "dependencies": {
-    "neverthrow": "^8.2.0"
+    "purify-ts": "^2.1.4"
   }
 }
