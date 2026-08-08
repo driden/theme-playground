@@ -26,7 +26,3 @@ run = "bun --workspaces run lint"
 [tasks.fmt]
 description = "Run the tests"
 run = "bun --workspaces run format"
-
-[tools]
-opencode = "latest"
-
