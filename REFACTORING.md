@@ -4,23 +4,21 @@
 
 ### Handle `themeExists` results explicitly
 
-`themeExists` returns `EitherAsync<IOError, boolean>`. Awaiting it produces an `Either`, not the contained boolean, and every `Either` object is truthy. The checks in `apps/server/src/server.ts` and `apps/server/src/apps/state.ts` therefore accept `Right(false)` and `Left(error)` as if the theme existed.
+`themeExists` returns `EitherAsync<IOError, boolean>`. `handleAction` now preserves that result in its domain error channel, but the route-local checks in `apps/server/src/server.ts` still await an `Either` as though it were the contained boolean.
 
-- [ ] Match both consumers explicitly.
-- [ ] Continue for `Right(true)`.
-- [ ] Return HTTP 404 for `Right(false)`.
-- [ ] Return HTTP 500 for `Left(error)`.
-- [ ] Add `apps/server/test/theme-existence.test.ts`.
-- [ ] Mock `themeExists` rather than config or the filesystem.
-- [ ] Verify `Right(false)` produces 404 and `Left(IOError)` produces 500.
-- [ ] Dynamically import consumers after installing Bun module mocks.
+- [x] Chain `handleAction` from `themeExists` without unwrapping the `EitherAsync`.
+- [x] Convert `Right(false)` to a typed `ThemeNotFound` error.
+- [x] Convert `Left(IOError)` to a typed `ThemeLookupFailed` error.
+- [x] Cover `themeExists` returning `Right(true)`, `Right(false)`, and `Left(IOError)`.
+- [x] Cover the corresponding `handleAction` domain results through `ActionsService`.
+- [ ] Handle the route-local `themeExists` consumers in `server.ts` explicitly.
 
 ### Await theme actions
 
 `apps/server/src/apps/state.ts` starts `handleUndo`, `handleSave`, or `handleDiscard`, then immediately builds state. Responses can contain stale file and history state.
 
-- [ ] Await each selected action before calling `buildAppState`.
-- [ ] Add behavioral coverage through `handleAction` for save, discard, and undo.
+- [x] Await each selected action before calling `buildAppState`.
+- [x] Add behavioral coverage through `handleAction` for save, discard, and undo.
 
 ## Architecture
 
@@ -28,15 +26,15 @@
 
 `apps/server/src/server.ts` imports `apps/state.ts`, while `apps/state.ts` imports `handleUndo` from `server.ts`.
 
-- [ ] Move `handleUndo` beside save/discard or into a focused action module.
-- [ ] Ensure application and state modules do not import the route module.
+- [x] Move `handleUndo` beside save/discard or into a focused action module.
+- [x] Ensure application and state modules do not import the route module.
 
 ### Keep HTTP errors at the boundary
 
-`apps/server/src/apps/state.ts` currently chooses HTTP status codes while building application state.
+Application operations should return typed errors and leave HTTP response decisions to routes.
 
-- [ ] Return typed application or domain errors from lower-level operations.
-- [ ] Translate those errors to `HttpError` in the route layer.
+- [x] Return typed application or domain errors from lower-level operations.
+- [x] Translate those errors to HTTP responses in the route layer.
 
 ### Finish decomposing `server.ts`
 

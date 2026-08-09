@@ -139,7 +139,6 @@ function actionHttpStatus(error: ActionError): number {
 
 type PaletteError = { cause: string; user: boolean };
 
-// TODO: We need a proper result/error lib here
 export function isPaletteError(obj: object): obj is PaletteError {
   if ((obj as PaletteError).cause != null) {
     return true;
