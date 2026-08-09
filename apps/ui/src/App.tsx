@@ -205,10 +205,13 @@ export default function App() {
 }
 
 const PROMPT_FONTS: { label: string; value: string }[] = [
-  { label: "Comic Code", value: '"Comic Code", monospace' },
-  { label: "Hack", value: '"Hack Nerd Font Mono", monospace' },
+  {
+    label: "Comic Code",
+    value: '"Comic Code", "Hack Nerd Font Mono", Monaco, monospace',
+  },
+  { label: "Hack", value: '"Hack Nerd Font Mono", Monaco, monospace' },
 ];
-const DEFAULT_PROMPT_FONT = '"Comic Code", monospace';
+const DEFAULT_PROMPT_FONT = '"Comic Code", "Hack Nerd Font Mono", Monaco, monospace';
 
 function AppSection({
   theme,
