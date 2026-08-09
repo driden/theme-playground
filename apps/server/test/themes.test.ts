@@ -1,6 +1,5 @@
-import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import fs from "node:fs/promises";
-import { readCurrentThemeName } from "../src/themes";
 
 import type { EitherAsync } from "purify-ts";
 
@@ -30,17 +29,31 @@ const expectEitherToBeErr = <ErrorType extends { kind: string }, Value>(
     },
   });
 
-const mockExists = spyOn(fs, "exists");
-const mockReadlink = spyOn(fs, "readlink");
+type DirectoryEntry = {
+  name: string;
+  isDirectory: () => boolean;
+};
+
+const mockExists = mock(async (_path: string): Promise<boolean> => false);
+const mockReaddir = mock(async (_path: string): Promise<DirectoryEntry[]> => []);
+const mockReadlink = mock(async (_path: string): Promise<string> => "");
+
+mock.module("node:fs/promises", () => ({
+  ...fs,
+  default: {
+    ...fs,
+    exists: mockExists,
+    readdir: mockReaddir,
+    readlink: mockReadlink,
+  },
+}));
+
+const { readCurrentThemeName, themeExists } = await import("../src/themes");
 
 beforeEach(() => {
   mockExists.mockReset();
+  mockReaddir.mockReset();
   mockReadlink.mockReset();
-});
-
-afterAll(() => {
-  mockExists.mockRestore();
-  mockReadlink.mockRestore();
 });
 
 describe("readCurrentThemeName", () => {
@@ -61,5 +74,35 @@ describe("readCurrentThemeName", () => {
     mockReadlink.mockRejectedValue(new Error("EACCES: permission denied"));
 
     await expectEitherToBeErr(readCurrentThemeName(), "CantReadCurrentFolderLink");
+  });
+});
+
+describe("themeExists", () => {
+  it("returns Right(true) for an existing theme", async () => {
+    mockReaddir.mockResolvedValue([
+      { name: "bamboo", isDirectory: () => true },
+      { name: "kanagawa", isDirectory: () => true },
+    ]);
+    mockExists.mockResolvedValue(true);
+    mockReadlink.mockResolvedValue("/home/user/.themes/bamboo");
+
+    await expectEitherToBe(themeExists("bamboo"), true);
+  });
+
+  it("returns Right(false) for a missing theme", async () => {
+    mockReaddir.mockResolvedValue([
+      { name: "bamboo", isDirectory: () => true },
+      { name: "kanagawa", isDirectory: () => true },
+    ]);
+    mockExists.mockResolvedValue(true);
+    mockReadlink.mockResolvedValue("/home/user/.themes/bamboo");
+
+    await expectEitherToBe(themeExists("missing"), false);
+  });
+
+  it("returns Left when themes cannot be listed", async () => {
+    mockReaddir.mockRejectedValue(new Error("EACCES: permission denied"));
+
+    await expectEitherToBeErr(themeExists("bamboo"), "CantReadThemesFolder");
   });
 });

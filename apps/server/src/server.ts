@@ -15,8 +15,9 @@ import {
 import type { Serve } from "bun";
 import { HttpError } from "./http.error";
 import { ensureDraft } from "./draft";
-import { popHistory, pushHistory } from "./history";
-import { buildAppState, buildThemeState, handleAction } from "./apps/state";
+import { pushHistory } from "./history";
+import { buildAppState, buildThemeState } from "./apps/state";
+import { type ActionError, handleAction } from "./apps/action";
 import { getAllThemes } from "./theme.controller";
 
 async function assertThemeExists(themeName: string): Promise<void> {
@@ -35,7 +36,10 @@ export const routes: Serve.Routes<undefined, string> = {
       const theme = req.params.theme as string;
       const app = req.params.app as string;
       const action = req.params.action as string;
-      return json(await handleAction(theme, app, action));
+      return handleAction(theme, app, action).caseOf({
+        Left: error => json({ error: error.message }, actionHttpStatus(error)),
+        Right: json,
+      });
     },
   },
   "/api/themes/:theme/:app": {
@@ -110,15 +114,27 @@ function json(value: unknown, status = 200): Response {
   });
 }
 
-export async function handleUndo(themeName: string, app: AppName, draft: string) {
-  const prev = popHistory(themeName, app);
-  if (prev === null) throw new HttpError(400, "nothing to undo");
-  await fs.writeFile(draft, prev, "utf8");
-}
-
 export async function handleGetTheme(themeName: string) {
   await assertThemeExists(themeName);
   return buildThemeState(themeName);
+}
+
+function actionHttpStatus(error: ActionError): number {
+  switch (error.kind) {
+    case "ThemeNotFound":
+    case "UnsupportedApp":
+    case "UnsupportedAction":
+      return 404;
+    case "NothingToUndo":
+      return 400;
+    case "ThemeLookupFailed":
+    case "ActionFailed":
+      return 500;
+    default: {
+      const exhaustiveError: never = error;
+      return exhaustiveError;
+    }
+  }
 }
 
 type PaletteError = { cause: string; user: boolean };

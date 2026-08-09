@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+export type PlaygroundError<Kind extends string, Details extends object> = {
+  kind: Kind;
+  message: string;
+} & Details;
+
 export const HexColorSchema = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/)

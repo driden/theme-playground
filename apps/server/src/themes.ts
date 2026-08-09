@@ -12,14 +12,8 @@ import {
 
 import { config } from "./config";
 import { type IOError, IOErrors } from "./errors/IOError";
+import { fromPromise } from "./utils/purify";
 import { EitherAsync, Left, Right } from "purify-ts";
-
-function fromPromise<Err, Val>(
-  promise: () => Promise<Val>,
-  mapError: (error: unknown) => Err,
-): EitherAsync<Err, Val> {
-  return EitherAsync<unknown, Val>(promise).mapLeft(mapError);
-}
 
 export function readCurrentThemeName(): EitherAsync<IOError, string> {
   const namePath = config().currentThemePath;

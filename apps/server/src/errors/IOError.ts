@@ -1,14 +1,15 @@
-export type ThemeError<S extends string, TExt extends object> = {
-  kind: S;
-  message: string;
-} & TExt;
+import type { PlaygroundError } from "@playground/lib/types";
+
 export type IOError =
   | CurrentThemeFolderMissingError
   | CantReadCurrentFolderLinkError
   | CantReadThemesFolder;
 
-type CurrentThemeFolderMissingError = ThemeError<"CurrentThemeFolderMissing", { path: string }>;
-type CantReadCurrentFolderLinkError = ThemeError<
+type CurrentThemeFolderMissingError = PlaygroundError<
+  "CurrentThemeFolderMissing",
+  { path: string }
+>;
+type CantReadCurrentFolderLinkError = PlaygroundError<
   "CantReadCurrentFolderLink",
   {
     path: string;
@@ -16,7 +17,7 @@ type CantReadCurrentFolderLinkError = ThemeError<
   }
 >;
 
-type CantReadThemesFolder = ThemeError<
+type CantReadThemesFolder = PlaygroundError<
   "CantReadThemesFolder",
   {
     path: string;
